@@ -1,0 +1,21 @@
+[package]
+name = "zari-proto"
+version = "0.1.0"
+edition = "2021"
+description = "Protocol buffer definitions and generated code for Zari project"
+license = "MIT"
+repository = "https://github.com/naukograd/zari"
+keywords = ["protobuf", "grpc", "zari", "graph", "workflow"]
+categories = ["encoding", "network-programming"]
+
+[dependencies]
+prost = { version = "0.13", features = ["derive"] }
+tonic = { version = "0.12.3", features = ["transport"] }
+serde = { version = "1.0.219", features = ["serde_derive"] }
+pbjson = "0.7.0"
+pbjson-types = "0.7.0"
+
+[features]
+default = []
+## @@protoc_deletion_point(features)
+## @@protoc_insertion_point(features)

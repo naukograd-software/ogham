@@ -1,0 +1,27 @@
+lint:
+  use:
+    - DEFAULT
+  enum_zero_value_suffix: _NONE
+  service_suffix: API
+  ignore: []
+  except: []
+  allow_comment_ignores: false
+  ignore_only: {}
+deps:
+generate:
+  inputs:
+    - directory: ogham
+  plugins:
+    - name: prost
+      out: ../crates/ogham-proto/src
+    - name: prost-serde
+      out: ../crates/ogham-proto/src
+    - name: tonic
+      out: ../crates/ogham-proto/src
+    - name: prost-crate
+      out: ../crates/ogham-proto
+      opts:
+        gen_crate: ./assets/Cargo.toml.tmpl
+breaking:
+  ignore: []
+  against_git_ref: master

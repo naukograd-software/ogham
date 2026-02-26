@@ -23,4 +23,8 @@ service UserAPI {
 
     contract GetUserPaginated(void) // CODE: we can use void to indicate that we don't need request params (proto: google.protobuf.Empty)
     -> Paginated<UserWithoutPassword>; // CODE: we can use template type for response this implicit convert to PaginatedUserWithoutPassword - not real generic
+
+    contract ClientStreamContract(stream UserWithoutPassword) -> void;
+    contract ServerStreamContract(Pick<User, email, name>) -> stream UserWithoutPassword;
+    contract BidirectionalStreamContract(stream UserWithoutPassword) -> stream UserWithoutPassword;
 }

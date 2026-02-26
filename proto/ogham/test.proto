@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ogham;
+
+message Test {
+    string test_field = 1;
+}
+
+service TestAPI {
+    rpc TestContract(Test) returns (Test) {}
+    rpc TestStreamContract(stream Test) returns (stream Test) {}
+    rpc TestBidirectionalStreamContract(stream Test) returns (stream Test) {}
+    rpc TestClientStreamContract(stream Test) returns (Test) {}
+}

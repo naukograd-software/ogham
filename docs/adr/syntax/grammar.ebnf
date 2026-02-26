@@ -63,8 +63,8 @@ service_decl      = { annotation_call } , "service" , identifier , "{" , { contr
 contract_decl     = { annotation_call } , "contract" , identifier , "(" , contract_param , ")" , "->" , contract_param , ";" ;
 
 contract_param    = "void"
-                  | type_ref
-                  | inline_type ;
+                  | [ "stream" ] , type_ref
+                  | [ "stream" ] , inline_type ;
 
 inline_type       = "{" , { field_decl } , "}" ;
 
