@@ -48,6 +48,7 @@
 - criterion - Rust benchmarking tool (MUST always be actual)
 
 ### Branching Policy
+**You MUST not add Yourself to co-author list**
 **We MUST start issues/features in separate branch**
 `main` is upstream branch for stable releases
 `develop` is upstream branch for active development
