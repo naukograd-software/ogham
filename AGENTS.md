@@ -9,9 +9,9 @@
 ## Edits in basic's ADRs is not allowed without approval from `USER`
 
 ## References
-1. [Syntax](./docs/syntax)
-2. [Package Management](./docs/package.md)
-3. [CLI Commands](./docs/cmd.md)
+1. [Syntax](./docs/adr/syntax)
+2. [Package Management](./docs/adr/package.md)
+3. [CLI Commands](./docs/adr/cmd.md)
 
 ## Development
 
