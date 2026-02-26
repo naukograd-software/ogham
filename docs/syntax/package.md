@@ -1,5 +1,29 @@
 # Package Management
 
+## Environment and Storage
+
+Ogham использует глобальное хранилище для зависимостей и бинарников, что позволяет избежать дублирования кода в каждом проекте.
+
+- **`OGHAM_HOME`**: Корневая директория Ogham (по умолчанию `~/.ogham`).
+- **`OGHAM_BIN`**: Директория для скомпилированных плагинов (по умолчанию `$OGHAM_HOME/bin`).
+- **`OGHAM_CACHE`**: Директория для скачанных исходных кодов пакетов (по умолчанию `$OGHAM_HOME/pkg/mod`).
+
+### Directory Structure
+
+```
+$OGHAM_HOME/
+├── bin/                # Скомпилированные бинарники плагинов
+│   ├── database@v2.0.0
+│   └── grpc-gen@v1.0.3
+└── pkg/
+    └── mod/            # Исходный код модулей (read-only cache)
+        └── github.com/
+            └── org/
+                └── database@v2.0.0/
+                    ├── ogham.toml
+                    └── ...
+```
+
 ## Module System
 
 Работает как в Go. Модуль — корневая единица, идентифицируемая URL-путём. Пакет — директория внутри модуля.
@@ -11,12 +35,11 @@ myproject/
 ├── models/
 │   ├── user.ogham      # package models
 │   └── order.ogham     # package models
-├── api/
-│   └── contracts.ogham # package api
-└── vendor/             # опционально, как go vendor
+└── api/
+    └── contracts.ogham # package api
 ```
 
-Файлы в одной директории — один пакет. Они видят типы друг друга напрямую без import.
+Файлы в одной директории — один пакет. Они видят типы друг друга напрямую без import. Пакеты зависимостей хранятся глобально в `OGHAM_CACHE`.
 
 ## Import
 
@@ -38,8 +61,8 @@ type User { ... }
 Alias при конфликте имён:
 
 ```
-import mydb = github.com/org/database;
-import otherdb = github.com/other/database;
+import github.com/org/database as mydb;
+import github.com/other/database as otherdb;
 ```
 
 ## Visibility
@@ -130,10 +153,12 @@ dependencies = ["github.com/ogham/std@1.0.0"]
 
 ## CLI Commands
 
-```
-ogham get github.com/org/database             # добавить зависимость
-ogham get github.com/org/database@2.1.0       # конкретная версия
-ogham update                                   # обновить зависимости в рамках semver
+```bash
+ogham get github.com/org/database             # добавить зависимость в ogham.toml, скачать и собрать (если плагин)
+ogham get github.com/org/database@2.1.0       # добавить конкретную версию
+ogham install                                  # установить/собрать все зависимости текущего проекта
+ogham install github.com/org/tool@latest      # скачать и собрать бинарник в OGHAM_BIN (глобально)
+ogham update                                   # обновить версии в ogham.lock
 ogham vendor                                   # скопировать зависимости в vendor/
 ogham verify                                   # проверить checksums
 ```
@@ -142,7 +167,17 @@ ogham verify                                   # проверить checksums
 
 # Plugin System
 
-Плагин (библиотека) — это модуль который определяет аннотации и предоставляет codegen/валидацию. Компилятор вызывает плагин, передаёт AST со всеми аннотациями, плагин возвращает сгенерированный код.
+Плагин (библиотека) — это модуль который определяет аннотации и предоставляет codegen/валидацию. 
+
+## Plugin Lifecycle & Distribution
+
+Процесс использования плагина полностью автоматизирован:
+
+1.  **Установка**: При запуске `ogham get` (для нового плагина) или `ogham install` (для существующего проекта), исходный код плагина скачивается в `$OGHAM_CACHE`.
+2.  **Прозрачная сборка**: Если в `ogham.toml` плагина указано поле `build`, `ogham` автоматически запускает сборку. Результирующий бинарник сохраняется в `$OGHAM_BIN/<name>@<version>`.
+3.  **Вызов**: При компиляции проекта `ogham` ищет нужную версию бинарника в `$OGHAM_BIN`. 
+
+Команда `ogham install <path>` позволяет установить плагин или утилиту в `$OGHAM_BIN` вне контекста конкретного проекта.
 
 ## Plugin Protocol
 
@@ -204,7 +239,8 @@ orm = { type = "string", default = "sqlc", enum = ["sqlc", "sqlx", "gorm"] }
 | Field | Required | Description |
 |-------|----------|-------------|
 | `protocol` | yes | Протокол вызова: `stdio` или `grpc` |
-| `binary` | stdio only | Имя бинарника в PATH или относительный путь |
+| `binary` | stdio only | Путь к бинарнику относительно корня плагина (после сборки будет скопирован в `OGHAM_BIN`) |
+| `build` | no | Команда для сборки плагина из исходников (запускается автоматически при установке или изменении `path`) |
 | `address` | grpc only | Адрес gRPC сервиса (`host:port`) |
 | `provides` | yes | Что предоставляет: `annotations`, `codegen`, `validation` |
 | `targets` | codegen only | Целевые языки кодогенерации |
@@ -272,6 +308,53 @@ orm = "sqlx"
 output_dir = "internal/api/gen/"
 target = "go"
 ```
+
+## Local Development
+
+Для разработки плагинов поддерживаются локальные пути. В этом режиме `ogham` следит за изменениями в исходниках плагина.
+
+### Local Path Dependencies
+
+В `ogham.toml` можно указать путь к локальной директории плагина:
+
+```toml
+[dependencies]
+"my-plugin" = { path = "../plugins/my-plugin" }
+```
+
+Если у такого плагина есть поле `build`, компилятор пересоберет его при следующем запуске `ogham compile`, если файлы в директории изменились. Бинарник для локального `path` может запускаться напрямую из места сборки, не загрязняя `OGHAM_BIN`.
+
+### Bootstrapping
+
+Создать заготовку нового плагина в текущей директории:
+
+```bash
+ogham init --plugin <name>
+```
+
+Это создаст базовый `ogham.toml` с секцией `[plugin]` и структуру файлов.
+
+## Remote Plugins (gRPC)
+
+Плагины могут работать как удалённые сервисы.
+
+### Serving a Plugin
+
+Если плагин поддерживает протокол `grpc`, его можно запустить как сервер:
+
+```bash
+ogham serve --plugin <name> --address :50051
+```
+
+Компилятор Ogham умеет подключаться к удалённым плагинам:
+
+```toml
+# В ogham.toml потребителя
+[dependencies]
+"remote-plugin" = { version = "^1.0.0", address = "grpc.prod.internal:50051" }
+```
+
+Это позволяет использовать общие плагины в CI/CD или распределённых командах без необходимости установки бинарников на каждую машину.
 
 ## Full Example
 

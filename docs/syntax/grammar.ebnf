@@ -7,7 +7,7 @@
 file              = package_decl , { import_decl } , { top_level_decl } ;
 
 package_decl      = "package" , identifier , ";" ;
-import_decl       = "import" , identifier , ";" ;
+import_decl       = "import" , import_path , [ "as" , identifier ] , ";" ;
 
 top_level_decl    = type_decl
                   | shape_decl
@@ -130,7 +130,9 @@ pick_type         = "Pick" , "<" , type_ref , "," , identifier_list , ">" ;
 
 omit_type         = "Omit" , "<" , type_ref , "," , ( identifier_list | identifier ) , ">" ;
 
-qualified_name    = identifier , [ "." , identifier ] ;
+qualified_name    = identifier , { "." , identifier } ;
+
+import_path       = identifier , { ( "." | "/" | "-" ) , identifier } ;
 
 type_params       = "<" , identifier , { "," , identifier } , ">" ;
 
