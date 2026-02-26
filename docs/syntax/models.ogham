@@ -14,33 +14,33 @@ import uuid;
 /* CODE: default types of Ogham is:
 
     // primitive types
-    bool - bool (protobuf-like)
+    bool - bool (proto: bool)
 
-    string - string (protobuf-like)
-    bytes - bytes (protobuf-like)
+    string - string (proto: string)
+    bytes - bytes (proto: bytes)
 
-    // integer primitive types
-    i8 - int8 (protobuf-doesn't exist)
-    int16 - int16 (protobuf-doesn't exist)
-    int32 - int32 (protobuf-like)
-    int64 - int64 (protobuf-like)
-    uint8 - uint8 (protobuf-doesn't exist)
-    uint16 - uint16 (protobuf-doesn't exist)
-    uint32 - uint32 (protobuf-like)
-    uint64 - uint64 (protobuf-like)
-    int - alias for int64
-    uint - alias for uint64
-    byte - alias for uint8
+    // integer primitive types (proto mapping: widening to nearest proto type)
+    i8 - int8 (proto: int32)
+    int16 - int16 (proto: int32)
+    int32 - int32 (proto: int32)
+    int64 - int64 (proto: int64)
+    uint8 - uint8 (proto: uint32)
+    uint16 - uint16 (proto: uint32)
+    uint32 - uint32 (proto: uint32)
+    uint64 - uint64 (proto: uint64)
+    int - alias for int64 (proto: int64)
+    uint - alias for uint64 (proto: uint64)
+    byte - alias for uint8 (proto: uint32)
 
     // floating point primitive types
-    float - float (protobuf-like)
-    double - double (protobuf-like)
+    float - float (proto: float)
+    double - double (proto: double)
 
     // container types
-    map - map<comparable, any> (protobuf-like map)
-    []T - repeated (protobuf-like repeated)
-    T? - optional (protobuf-like optional)
-    [16]T - fixed array of 16 elements (protobuf-like)
+    map - map<comparable, any> (proto: map<K, V>, keys always convertible to proto-compatible type)
+    []T - repeated (proto: repeated T)
+    T? - optional (proto: optional T)
+    [N]T - fixed array of N elements (proto: repeated T, size constraint is compile-time only)
 */
 
 type Id = uuid.UUID;

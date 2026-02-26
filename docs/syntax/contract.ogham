@@ -12,7 +12,7 @@ service UserAPI {
 
     contract ContractExample2({ //CODE: we can create implicit type for contract params -> compiler generates ContractExample2Input
         string str =1;
-    }) -> void; //CODE: we can use void to indicate that we don't need response
+    }) -> void; //CODE: we can use void to indicate that we don't need response (proto: google.protobuf.Empty)
 
     contract ContractExample3(UserWithoutPassword) -> UserWithoutPassword2; //CODE: we can use type aliases
 
@@ -21,6 +21,6 @@ service UserAPI {
         string name =2;
     }; // CODE: implicit type for response -> compiler generates ContractExample4Output
 
-    contract GetUserPaginated(void) // CODE: we can use void to indicate that we don't need request params
+    contract GetUserPaginated(void) // CODE: we can use void to indicate that we don't need request params (proto: google.protobuf.Empty)
     -> Paginated<UserWithoutPassword>; // CODE: we can use template type for response this implicit convert to PaginatedUserWithoutPassword - not real generic
 }

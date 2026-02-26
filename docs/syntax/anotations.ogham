@@ -1,5 +1,20 @@
 package example;
 
+/*
+    CODE: Annotation placement rules.
+    Annotations can be placed on any target declared in annotation's "for" clause.
+
+    Proto mapping by target:
+    - shape     → proto: MessageOptions (propagates to message where shape is injected)
+    - type      → proto: MessageOptions
+    - field     → proto: FieldOptions
+    - oneof     → proto: OneofOptions
+    - oneof_field → proto: FieldOptions
+    - enum      → proto: EnumOptions
+    - enum_value → proto: EnumValueOptions
+    - service   → proto: ServiceOptions
+    - contract  → proto: MethodOptions
+*/
 
 @<library>::<annotation_name>(
     // here params from annotation schema defined in library annotation block

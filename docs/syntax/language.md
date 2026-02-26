@@ -189,13 +189,102 @@ annotation Name for <target1>|<target2> {
 
 ### Built-in Annotations
 
-| Annotation | Description |
-|------------|-------------|
-| `@default(<value>)` | Значение по умолчанию. Magic keywords: `now`, `(u)int*.<min,max>` |
-| `@cast(<type>)` | Безопасное приведение типа |
-| `@removed(fallback=<value>)` | Пометить enum value как удалённое |
-| `@reserved(<number>)` | Зарезервировать номер поля |
+| Annotation | Description | Proto mapping |
+|------------|-------------|---------------|
+| `@default(<value>)` | Значение по умолчанию. Magic keywords: `now`, `(u)int*.<min,max>` | Custom option `ogham.default` |
+| `@cast(<type>)` | Безопасное приведение типа | Custom option `ogham.cast` |
+| `@removed(fallback=<value>)` | Пометить enum value как логически удалённое | Custom options `ogham.removed` + `ogham.fallback` (значение остаётся в proto enum — proto enum не удаляет values) |
+| `@reserved(<number>)` | Зарезервировать номер поля | `reserved <number>;` |
+
+### Proto Target Mapping
+
+| Annotation target | Proto option type |
+|-------------------|-------------------|
+| `type` | `google.protobuf.MessageOptions` |
+| `field` | `google.protobuf.FieldOptions` |
+| `oneof` | `google.protobuf.OneofOptions` |
+| `oneof_field` | `google.protobuf.FieldOptions` |
+| `enum` | `google.protobuf.EnumOptions` |
+| `enum_value` | `google.protobuf.EnumValueOptions` |
+| `service` | `google.protobuf.ServiceOptions` |
+| `contract` | `google.protobuf.MethodOptions` |
+| `shape` | `google.protobuf.MessageOptions` (проваливается на message, в который shape инжектирован) |
 
 ## Semicolons
 
 Точка с запятой обязательна после всех объявлений: полей, type alias, enum values, contracts.
+
+## Protobuf Compatibility
+
+Ogham полностью совместим с protobuf: из любой `.ogham` схемы можно сгенерировать корректный `.proto` файл.
+
+### Type Mapping
+
+| Ogham | Proto |
+|-------|-------|
+| `i8`, `int16` | `int32` (widening) |
+| `int32` | `int32` |
+| `int64`, `int` | `int64` |
+| `uint8`, `uint16`, `byte` | `uint32` (widening) |
+| `uint32` | `uint32` |
+| `uint64`, `uint` | `uint64` |
+| `bool` | `bool` |
+| `string` | `string` |
+| `bytes` | `bytes` |
+| `float` | `float` |
+| `double` | `double` |
+| `[]T` | `repeated T` |
+| `T?` | `optional T` |
+| `[N]T` | `repeated T` (размер — compile-time constraint) |
+| `map<K, V>` | `map<K, V>` (ключи всегда comparable, конвертируются к proto-типу) |
+
+### Structural Mapping
+
+| Ogham | Proto |
+|-------|-------|
+| `type` | `message` |
+| `type Alias = T` | Раскрывается в целевой тип |
+| `type Generic<T>` | Monomorphization → конкретные `message` |
+| `enum` | `enum` (все значения сохраняются, `@removed` → option) |
+| `shape` | Раскрывается в поля `message` |
+| `Pick<T, ...>` / `Omit<T, ...>` | Новый `message` с подмножеством полей |
+| `oneof` | `oneof` |
+| `service` | `service` |
+| `contract` | `rpc` |
+| `void` | `google.protobuf.Empty` |
+
+### Annotations → OghamAnnotation
+
+Все аннотации сериализуются через единый extension `OghamAnnotation` с `google.protobuf.Struct`:
+
+```protobuf
+// ogham/options.proto — часть ogham std
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/struct.proto";
+
+message OghamAnnotation {
+    string name = 1;                     // "database::Table"
+    google.protobuf.Struct params = 2;   // { "table_name": "users" }
+}
+
+extend google.protobuf.MessageOptions   { repeated OghamAnnotation ogham = 50000; }
+extend google.protobuf.FieldOptions     { repeated OghamAnnotation ogham = 50001; }
+extend google.protobuf.OneofOptions     { repeated OghamAnnotation ogham = 50002; }
+extend google.protobuf.EnumOptions      { repeated OghamAnnotation ogham = 50003; }
+extend google.protobuf.EnumValueOptions { repeated OghamAnnotation ogham = 50004; }
+extend google.protobuf.ServiceOptions   { repeated OghamAnnotation ogham = 50005; }
+extend google.protobuf.MethodOptions    { repeated OghamAnnotation ogham = 50006; }
+```
+
+Не нужна нумерация в annotation declarations — компилятор валидирует типы, Struct используется как транспорт. Пример:
+
+```
+// Ogham source:
+@database::Table(table_name="users")
+type User { ... }
+
+// Generated .proto:
+message User {
+    option (ogham) = { name: "database::Table", params: { fields { key: "table_name" value { string_value: "users" } } } };
+}
+```

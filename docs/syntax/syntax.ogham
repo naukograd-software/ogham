@@ -14,18 +14,18 @@
     service - the service is scope of contracts
 
     // define extensions
-    annotation - define annotation for data
+    annotation - define annotation for data (proto: OghamAnnotation { name, google.protobuf.Struct })
 
     // magical keywords
 
 
-    // default language annotations
-    @default(<value>) - set default value for field
+    // default language annotations (all map to protobuf custom options)
+    @default(<value>) - set default value for field (proto: custom option ogham.default)
     /* Set of magical keywords:
         (u)int*.<min,max> - number of max/min value for int to use in @default(<value>)
         now - current timestamp
     */
-    @cast(<built-in-type>) - mark filed can be cast and downcast to another type safely
-    @removed(fallback=<enum-value>) - mark field as removed for enum value (fallback must point to non-removed value, chaining prohibited)
-    @reserved - reserved fields for future use or removal
+    @cast(<built-in-type>) - mark filed can be cast and downcast to another type safely (proto: custom option ogham.cast)
+    @removed(fallback=<enum-value>) - mark enum value as logically removed (proto: custom option ogham.removed + ogham.fallback, value stays in proto enum — proto enums never delete values)
+    @reserved - reserved fields for future use or removal (proto: reserved N)
 */

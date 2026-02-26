@@ -28,8 +28,13 @@ shape ExampleAnnotationShape {
 
 annotation ExampleAnnotation for shape|type|field|oneof|oneof_field|enum|enum_value|service|contract {
     /*
-     CODE: annotations can use any types for own schema with default values (or without)
-     If field has ? or has default value - it's optional
+     CODE: annotations can use any types for own schema with default values (or without).
+     If field has ? or has default value - it's optional.
+
+     Proto mapping:
+     - All annotations serialized via unified OghamAnnotation { name, google.protobuf.Struct }
+     - No extension numbers or field numbers needed — compiler validates types, Struct is transport
+     - shape target → options propagate to generated message (MessageOptions)
     */
 
     string? example_param = "";
@@ -41,7 +46,7 @@ annotation ExampleAnnotation for shape|type|field|oneof|oneof_field|enum|enum_va
     map<string, string> metadata;
     map<int, float> numeric_metadata;
     std.Timestamp example_timestamp;
-    std.Decimal example_decimal= { 1, 2 };
+    std.Decimal example_decimal = { 1, 2 };
     // CODE: include inplace types
     example_struct: {
         string inner_field;
