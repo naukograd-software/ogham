@@ -51,7 +51,9 @@
 
 This project uses **bd (beads)** for issue tracking.
 
-**We must track issues in Beads**
+**We MUST track issues/features in Beads**
+**We MUST decompose issues/features into smaller, manageable chunks and link them to master issue/feature, beads allow that easily**
+**We MUST start issues/features in separate branch**
 
 Run `bd prime` for workflow context
 
