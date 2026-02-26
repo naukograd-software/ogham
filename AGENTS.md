@@ -47,13 +47,20 @@
 - rustfmt - Rust formatter (MUST always be actual)
 - criterion - Rust benchmarking tool (MUST always be actual)
 
+### Branching Policy
+**We MUST start issues/features in separate branch**
+`main` is upstream branch for stable releases
+`develop` is upstream branch for active development
+`feature/<name>` is branch for issue/feature development
+`bugfix/<name>` is branch for bug fixes
+`issue/<name>` is branch for issue tracking
+
 ## Issue Tracking
 
 This project uses **bd (beads)** for issue tracking.
 
 **We MUST track issues/features in Beads**
 **We MUST decompose issues/features into smaller, manageable chunks and link them to master issue/feature, beads allow that easily**
-**We MUST start issues/features in separate branch**
 
 Run `bd prime` for workflow context
 
