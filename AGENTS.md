@@ -4,8 +4,6 @@
 
 ## Now repository in heavy developer mode - breaking changes are allowed !!!
 
-### Beads: "Before starting any work, run 'bd onboard' to understand the current project state and available issues."
-
 ## References
 1. [Syntax](./docs/syntax)
 2. [Package Management](./docs/package.md)
@@ -49,11 +47,21 @@
 - rustfmt - Rust formatter (MUST always be actual)
 - criterion - Rust benchmarking tool (MUST always be actual)
 
-## Agent summary (Beads / `bd`)
+## Issue Tracking
 
-- Use Beads (`bd`) as the repo’s task memory/issue tracker. 
-- Always start by finding work with `bd ready`; if nothing fits, create a new issue with `bd create "Title"` 
-- and capture context using non-interactive updates (e.g., `bd update <ID> --notes/--design/--acceptance ...`). Avoid interactive commands like `bd edit` (it opens an editor and will hang). Use `bd show <ID>` to review details, add dependencies to model “blocked by / blocks”, and close completed work with `bd close <ID> --reason "Completed"`. Prefer small, linked tasks (epic → task → subtask) and keep key decisions in Beads notes, not only in chat.
+This project uses **bd (beads)** for issue tracking.
+
+**We must track issues in Beads**
+
+Run `bd prime` for workflow context
+
+**Quick reference:**
+- `bd ready` - Find unblocked work
+- `bd create "Title" --type task --priority 2` - Create issue
+- `bd close <id>` - Complete work
+- `bd sync` - Sync with git (run at session end)
+
+For full workflow details: `bd prime`
 
 ### MCP and agent's tooling
 All mcp used by mcp-catalog-proxy server
@@ -86,6 +94,7 @@ We must heavily use web if we need to answer any questions or have any problems 
 - Write and use macros for heavy code reuse to reduce repetition and enhance maintainability; respect macros provided by external libraries and follow recommended patterns.
 
 ### Deps
+**Add create to dependencies if it really closes our need (such as system deps or algorithms like cryptography of id generation)**
 - Centralize dependencies with `[workspace.dependencies]` for unified versioning and faster compilation; declare shared package metadata in `[workspace.package]`.
 - Store compiler and linter config at the workspace root for unified command aliases and build settings.
 - Use only maintained dependencies from reputable sources (e.g., crates.io) and avoid unlicensed or insecure code.
