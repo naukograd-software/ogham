@@ -4,6 +4,8 @@
 
 ## Now repository in heavy developer mode - breaking changes are allowed !!!
 
+## Edits in basic's ADRs is not allowed without approval from `USER`
+
 ## References
 1. [Syntax](./docs/syntax)
 2. [Package Management](./docs/package.md)
@@ -141,6 +143,7 @@ We must heavily use web if we need to answer any questions or have any problems 
 - Focus: system boundaries, contracts, evolution & compatibility
 ### Primary mission
 Produce an Architecture / Design Brief: goals, non-goals, constraints, module boundaries, public APIs, compatibility/migrations, error model (thiserror/anyhow), async model (tokio), trait boundaries for testability, docs updates.
+**BEFORE handoff to `LEAD` - write issue/feature implementation plan to `docs/impl/<plan_name>.md` and COORDINATE WITH `USER` **
 ### Handoff rules
 - To `LEAD` (always): once the Design Brief + task decomposition is ready.
 - To `DEV`: if a prototype/spike is needed to validate API/format feasibility.
