@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "crates/ogham-cli",
+    "crates/ogham-compiler",
+    "crates/ogham-core",
+    "crates/ogham-lsp",
+    "crates/ogham-proto",
+]
+resolver = "2"

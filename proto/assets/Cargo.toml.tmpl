@@ -1,19 +1,20 @@
 [package]
-name = "zari-proto"
+name = "ogham-proto"
 version = "0.1.0"
 edition = "2021"
-description = "Protocol buffer definitions and generated code for Zari project"
+description = "Protocol buffer definitions and generated code for Ogham"
 license = "MIT"
-repository = "https://github.com/naukograd/zari"
-keywords = ["protobuf", "grpc", "zari", "graph", "workflow"]
+repository = "https://github.com/naukograd/ogham"
+keywords = ["protobuf", "grpc", "ogham", "schema", "language"]
 categories = ["encoding", "network-programming"]
 
 [dependencies]
-prost = { version = "0.13", features = ["derive"] }
-tonic = { version = "0.12.3", features = ["transport"] }
+prost = { version = "0.14", features = ["derive"] }
+tonic = { version = "0.14", features = ["transport"] }
+tonic-prost = "0.14"
 serde = { version = "1.0.219", features = ["serde_derive"] }
-pbjson = "0.7.0"
-pbjson-types = "0.7.0"
+pbjson = "0.9"
+pbjson-types = "0.9"
 
 [features]
 default = []
