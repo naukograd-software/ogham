@@ -1,0 +1,53 @@
+package example;
+
+
+@<library>::<annotation_name>(
+    // here params from annotation schema defined in library annotation block
+)
+shape ExampleShape {
+    @<library>::<annotation_name>(
+        // here params from annotation schema defined in library annotation block
+    )
+    string example_field;
+}
+
+@<library>::<annotation_name>(
+    // here params from annotation schema defined in library annotation block
+)
+type ExampleType {
+    @<library>::<annotation_name>(
+        // here params from annotation schema defined in library annotation block
+    )
+    string example_field = 1;
+    @<library>::<annotation_name>(
+        // here params from annotation schema defined in library annotation block
+    )
+    oneof example_oneof {
+        @<library>::<annotation_name>(
+            // here params from annotation schema defined in library annotation block
+        )
+        string example_oneof_field = 1;
+    }
+}
+
+
+@<library>::<annotation_name>(
+    // here params from annotation schema defined in library annotation block
+)
+enum ExampleEnum {
+    @<library>::<annotation_name>(
+        // here params from annotation schema defined in library annotation block
+    )
+    Value1 = 1;
+    Value2 = 2;
+}
+
+@<library>::<annotation_name>(
+    // here params from annotation schema defined in library annotation block
+)
+service ExampleService {
+    @<library>::<annotation_name>(
+        // here params from annotation schema defined in library annotation block
+    )
+    contract ExampleContract(ExampleType) -> ExampleType;
+}

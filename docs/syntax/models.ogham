@@ -1,0 +1,151 @@
+package example;
+
+import std;
+import uuid;
+
+// This is one line comment
+
+/*
+    This is multiline comment
+*/
+
+// CODE: types with started from upper case - can be used in other schemas, opposite - only from package
+
+/* CODE: default types of Ogham is:
+
+    // primitive types
+    bool - bool (protobuf-like)
+
+    string - string (protobuf-like)
+    bytes - bytes (protobuf-like)
+
+    // integer primitive types
+    i8 - int8 (protobuf-doesn't exist)
+    int16 - int16 (protobuf-doesn't exist)
+    int32 - int32 (protobuf-like)
+    int64 - int64 (protobuf-like)
+    uint8 - uint8 (protobuf-doesn't exist)
+    uint16 - uint16 (protobuf-doesn't exist)
+    uint32 - uint32 (protobuf-like)
+    uint64 - uint64 (protobuf-like)
+    int - alias for int64
+    uint - alias for uint64
+    byte - alias for uint8
+
+    // floating point primitive types
+    float - float (protobuf-like)
+    double - double (protobuf-like)
+
+    // container types
+    map - map<comparable, any> (protobuf-like map)
+    []T - repeated (protobuf-like repeated)
+    T? - optional (protobuf-like optional)
+    [16]T - fixed array of 16 elements (protobuf-like)
+*/
+
+type Id = uuid.UUID;
+
+shape Identifiable { // CODE: shape name must not collide with type alias
+    Id id;
+}
+
+shape TemplateShape<T> { //CODE: shapes can be used with template types -- only compile-time check
+    T value;
+}
+
+shape Timestamps {
+    std.Timestamp created_at @default(now);
+    std.Timestamp updated_at @default(now);
+}
+
+shape SafeDelete {
+    std.Timestamp? deleted_at;
+}
+
+shape MyModelMixIn { //CODE: shape can be composable
+    Identifiable;
+    Timestamps, SafeDelete;
+}
+
+type UserIsAdmin = bool; // CODE: type alias - only compile-time check
+
+shape UserPassword { //CODE: shape using for include in model without duplication of fields
+    string password_hash;
+    string password_salt;
+}
+
+type User {
+  MyModelMixIn(1..4)
+  /*
+    CODE: shape injection with range (1..4).
+    Compiler checks that shape expands to exactly fields 1..4.
+    If shape grows beyond range - compilation error.
+    Implicit fields:
+    uuid.UUID id = 1;
+    std.Timestamp created_at = 2;
+    std.Timestamp updated_at = 3;
+    std.Timestamp? deleted_at = 4;
+  */
+  string email = 5;
+  string name = 6;
+  UserPassword(7..8)
+  /*
+    CODE: shape injection with range (7..8).
+    Implicit fields:
+    string password_hash = 7;
+    string password_salt = 8;
+  */
+  []Order orders = 9; // CODE: array of orders // Many-to-Many relationship with Order model
+  oneof address {
+    Address home = 10;
+    Address work = 11; //CODE: we allow to have many fields of one type in oneof but with different id
+    string string_address = 12;
+  }
+  std.Timestamp last_login = 13;
+  UserIsAdmin is_admin = 14; // CODE: using type alias
+  float score = 15;
+  map<string, string> metadata = 16; //CODE: map is generic map<comparable, any>
+  @reserved(17)
+}
+
+// CODE: Pick and Omit are language keywords, not from std
+type PublicUser = Pick<User, id, email, name, last_login, is_admin, score>;
+
+type UserWithoutPassword = Omit<User, password_hash, password_salt>;
+// CODE: Omit with shape matches fields by name+type pair. Compiler warns if no fields matched.
+type UserWithoutPassword2 = Omit<User, UserPassword>;
+
+type Passport {
+  uuid.UUID id = 1;
+  User owner = 2; // CODE: one-to-one relationship with User model (always reference, like protobuf)
+  string country = 3;
+  int number = 4;
+}
+
+type Group {
+  uuid.UUID id = 1;
+  string name = 2;
+  []User users = 3; // CODE: many-to-many relationship with User model
+}
+
+enum OrderStatus { // CODE: enum for using in code
+    // Implicitly add Unspecified=0;
+    Pending=1;
+    Processing=2;
+    Completed=3;
+    @removed(fallback=Completed) // CODE: if removed - need fallback to non-removed value
+    Delivered=4;
+    @removed(fallback=Completed) // CODE: fallback must point to non-removed value (chaining prohibited)
+    Failed=5;
+    @removed(fallback=Completed) // CODE: fallback must point to non-removed value (chaining prohibited)
+    Refunded=6;
+    Cancelled=7;
+}
+
+type Order {
+  uuid.UUID id = 1;
+  User owner = 2; // CODE: nested type is always reference (like protobuf message)
+  []Item items = 3;
+  OrderStatus status = 4;
+  std.Decimal total = 5;
+}

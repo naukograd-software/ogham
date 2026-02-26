@@ -1,0 +1,132 @@
+package library;
+
+import std;
+
+// CODE: This block define type explanation for library
+
+// "uuid" library define UUID type
+type UUID = [16]u8;
+
+// "ulid" library define ULID type
+type ULID = [16]u8;
+
+// "decimal" library define Decimal type
+type Decimal {
+    int64 coefficient = 1;
+    int32 exponent = 2;
+}
+
+// "time" library define Timestamp type
+type Timestamp = uint64;
+
+
+// CODE: This block define annotations block for library
+
+shape ExampleAnnotationShape {
+    string example_field_in_shape;
+}
+
+annotation ExampleAnnotation for shape|type|field|oneof|oneof_field|enum|enum_value|service|contract {
+    /*
+     CODE: annotations can use any types for own schema with default values (or without)
+     If field has ? or has default value - it's optional
+    */
+
+    string? example_param = "";
+    int? example_int = 0;
+    bool example_bool = false;
+    float example_float = 0.0;
+    // CODE: include imports
+    std.UUID example_uuid;
+    map<string, string> metadata;
+    map<int, float> numeric_metadata;
+    std.Timestamp example_timestamp;
+    std.Decimal example_decimal= { 1, 2 };
+    // CODE: include inplace types
+    example_struct: {
+        string inner_field;
+        inner_struct {
+            string inner_inner_field;
+        }
+    }
+    // CODE: include shapes as type
+    ExampleAnnotationShape example_shape;
+}
+
+
+// Examples:
+
+//CODE: This example show how to call annotation with params
+
+@library::ExampleAnnotation(example_param="example_value",
+    metadata={key1:"value1", key2:"value2"},
+    numeric_metadata={1:1.1, 2:2.2},
+    example_uuid = "example_uuid",
+    example_struct={
+    inner_field="example_inner_field",
+        inner_struct={
+            inner_inner_field="example_inner_inner_field"
+        }
+    }
+)
+shape ExampleShape {
+    string example_field;
+}
+
+
+// CODE: this example show how to use annotations
+
+annotation Table for type {
+    string table_name;
+}
+annotation Column for field {
+    string column_name;
+    bool primary_key = false;
+}
+annotation OneOf for oneof {
+    string expand;
+    bool ignore = false;
+}
+annotation OneOfField for oneof_field {
+    string column_name;
+}
+annotation Enum for enum {
+    bool store_as_string = false;
+}
+annotation EnumField for enum_value {
+    string enum_value_name;
+}
+annotation Service for service {
+    string base_url;
+}
+annotation Contract for contract {
+    string raw_psql_func = "";
+}
+/*
+    Example:
+    @database::Enum(store_as_string=true)
+    enum ExampleEnum {
+        @database::EnumField(enum_value_name="VALUE_1")
+        Value1 = 1;
+        @database::EnumField(enum_value_name="VALUE_2")
+        Value2 = 2;
+    }
+    @database::Table(table_name="users")
+    type User {
+        @database::Column(column_name="id", primary_key=true)
+        uuid.UUID id = 1;
+        @database::Column(column_name="email")
+        string email = 2;
+        @database::Column(column_name="name")
+        oneof name {
+            @database::OneOfField(column_name="first_name")
+            string first_name = 1;
+            @database::OneOfField(column_name="last_name")
+            string last_name = 2;
+        }
+    }
+    service UserService {
+        @database::Contract(raw_psql_func="SELECT * FROM users WHERE id = $1")
+        contract GetUser(uuid.UUID) -> User;
+    }
+*/

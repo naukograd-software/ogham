@@ -1,0 +1,31 @@
+/* CODE: keywords of Ogham are:
+
+    // define data
+    type - the type of data
+    oneof - protobuf-like oneof
+    enum - protobuf-like enum
+    shape - the shape of data
+    Pick<T, ...> - pick fields from type T (language keyword)
+    Omit<T, ...> - omit fields from type T (language keyword)
+
+
+    // define behavior
+    contract - the contract to define rpc
+    service - the service is scope of contracts
+
+    // define extensions
+    annotation - define annotation for data
+
+    // magical keywords
+
+
+    // default language annotations
+    @default(<value>) - set default value for field
+    /* Set of magical keywords:
+        (u)int*.<min,max> - number of max/min value for int to use in @default(<value>)
+        now - current timestamp
+    */
+    @cast(<built-in-type>) - mark filed can be cast and downcast to another type safely
+    @removed(fallback=<enum-value>) - mark field as removed for enum value (fallback must point to non-removed value, chaining prohibited)
+    @reserved - reserved fields for future use or removal
+*/

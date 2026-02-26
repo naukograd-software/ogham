@@ -1,0 +1,26 @@
+package example;
+// CODE: we can access to structs from models.ogham directly -> we in one package
+
+type Paginated<T> {
+    []T data = 1;
+    int total = 2;
+    string next_page_token = 3;
+}
+
+service UserAPI {
+    contract ContractExample1(Pick<User, email, name>) -> UserWithoutPassword; //CODE: Pick is a language keyword, usable directly in contract params
+
+    contract ContractExample2({ //CODE: we can create implicit type for contract params -> compiler generates ContractExample2Input
+        string str =1;
+    }) -> void; //CODE: we can use void to indicate that we don't need response
+
+    contract ContractExample3(UserWithoutPassword) -> UserWithoutPassword2; //CODE: we can use type aliases
+
+    contract ContractExample4(Pick<User, email, name>) -> {
+        string email =1;
+        string name =2;
+    }; // CODE: implicit type for response -> compiler generates ContractExample4Output
+
+    contract GetUserPaginated(void) // CODE: we can use void to indicate that we don't need request params
+    -> Paginated<UserWithoutPassword>; // CODE: we can use template type for response this implicit convert to PaginatedUserWithoutPassword - not real generic
+}

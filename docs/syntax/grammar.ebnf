@@ -1,0 +1,163 @@
+(* ========================================= *)
+(* Ogham Schema Language — EBNF Grammar      *)
+(* ========================================= *)
+
+(* === Top-level === *)
+
+file              = package_decl , { import_decl } , { top_level_decl } ;
+
+package_decl      = "package" , identifier , ";" ;
+import_decl       = "import" , identifier , ";" ;
+
+top_level_decl    = type_decl
+                  | shape_decl
+                  | enum_decl
+                  | service_decl
+                  | annotation_decl ;
+
+(* === Type === *)
+
+type_decl         = { annotation_call } , "type" , type_name , ( type_alias | type_body ) ;
+
+type_alias        = "=" , type_ref , ";" ;
+
+type_body         = [ type_params ] , "{" , { type_member } , "}" ;
+
+type_member       = shape_injection
+                  | field_decl
+                  | oneof_decl
+                  | reserved_decl ;
+
+shape_injection   = identifier , "(" , integer , ".." , integer , ")" ;
+
+field_decl        = { annotation_call } , type_ref , identifier , "=" , integer , ";" ;
+
+oneof_decl        = { annotation_call } , "oneof" , identifier , "{" , { oneof_field } , "}" ;
+
+oneof_field       = { annotation_call } , type_ref , identifier , "=" , integer , ";" ;
+
+reserved_decl     = "@reserved" , "(" , integer , ")" ;
+
+(* === Shape === *)
+
+shape_decl        = { annotation_call } , "shape" , identifier , [ type_params ] , "{" , { shape_member } , "}" ;
+
+shape_member      = shape_include
+                  | shape_field ;
+
+shape_include     = identifier , { "," , identifier } , ";" ;
+
+shape_field       = { annotation_call } , type_ref , identifier , { annotation_call } , ";" ;
+
+(* === Enum === *)
+
+enum_decl         = { annotation_call } , "enum" , identifier , "{" , { enum_value_decl } , "}" ;
+
+(* NOTE: Unspecified=0 is added implicitly by compiler *)
+enum_value_decl   = { annotation_call } , identifier , "=" , integer , ";" ;
+
+(* === Service & Contract === *)
+
+service_decl      = { annotation_call } , "service" , identifier , "{" , { contract_decl } , "}" ;
+
+contract_decl     = { annotation_call } , "contract" , identifier , "(" , contract_param , ")" , "->" , contract_param , ";" ;
+
+contract_param    = "void"
+                  | type_ref
+                  | inline_type ;
+
+inline_type       = "{" , { field_decl } , "}" ;
+
+(* === Annotation Definition === *)
+
+annotation_decl   = "annotation" , identifier , "for" , annotation_targets , "{" , { annotation_field } , "}" ;
+
+annotation_targets = annotation_target , { "|" , annotation_target } ;
+
+annotation_target = "shape" | "type" | "field" | "oneof" | "oneof_field"
+                  | "enum" | "enum_value" | "service" | "contract" ;
+
+annotation_field  = type_ref , [ "?" ] , identifier , [ "=" , literal ] , ";"
+                  | identifier , ":" , inline_annotation_type ;
+
+inline_annotation_type = "{" , { annotation_field } , "}" ;
+
+(* === Annotation Call === *)
+
+annotation_call   = "@" , ( annotation_ref | builtin_annotation ) ;
+
+(* Library annotations: @library::Name(...) *)
+annotation_ref    = identifier , "::" , identifier , [ "(" , [ annotation_args ] , ")" ] ;
+
+annotation_args   = annotation_arg , { "," , annotation_arg } ;
+
+annotation_arg    = identifier , "=" , annotation_value ;
+
+annotation_value  = literal
+                  | "{" , annotation_value_fields , "}"
+                  | "{" , annotation_value_list , "}" ;
+
+annotation_value_fields = annotation_value_field , { "," , annotation_value_field } ;
+
+annotation_value_field  = ( identifier | literal ) , ( "=" | ":" ) , annotation_value ;
+
+annotation_value_list   = annotation_value , { "," , annotation_value } ;
+
+(* Built-in annotations *)
+builtin_annotation = "default" , "(" , literal , ")"
+                   | "cast" , "(" , type_ref , ")"
+                   | "removed" , "(" , "fallback" , "=" , identifier , ")"
+                   | "reserved" , "(" , integer , ")" ;
+
+(* === Type References === *)
+
+type_ref          = base_type , [ "?" ] ;
+
+base_type         = array_type
+                  | fixed_array_type
+                  | map_type
+                  | pick_type
+                  | omit_type
+                  | qualified_name ;
+
+array_type        = "[]" , type_ref ;
+
+fixed_array_type  = "[" , integer , "]" , type_ref ;
+
+map_type          = "map" , "<" , type_ref , "," , type_ref , ">" ;
+
+pick_type         = "Pick" , "<" , type_ref , "," , identifier_list , ">" ;
+
+omit_type         = "Omit" , "<" , type_ref , "," , ( identifier_list | identifier ) , ">" ;
+
+qualified_name    = identifier , [ "." , identifier ] ;
+
+type_params       = "<" , identifier , { "," , identifier } , ">" ;
+
+type_name         = identifier ;
+
+(* === Terminals === *)
+
+identifier_list   = identifier , { "," , identifier } ;
+
+identifier        = letter , { letter | digit | "_" } ;
+
+literal           = string_literal | integer | float_literal | bool_literal | "now" ;
+
+string_literal    = '"' , { character } , '"' ;
+
+integer           = [ "-" ] , digit , { digit } ;
+
+float_literal     = [ "-" ] , digit , { digit } , "." , digit , { digit } ;
+
+bool_literal      = "true" | "false" ;
+
+letter            = "A" | "B" | ... | "Z" | "a" | "b" | ... | "z" ;
+
+digit             = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+
+(* === Comments === *)
+
+comment           = line_comment | block_comment ;
+line_comment      = "//" , { character } , newline ;
+block_comment     = "/*" , { character | newline } , "*/" ;
