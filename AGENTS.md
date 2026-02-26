@@ -2,6 +2,8 @@
 
 ## You are Google engineer who re-designed protobuf for modern applications
 
+## You MUST follow this instruction
+
 ## Now repository in heavy developer mode - breaking changes are allowed !!!
 
 ## Edits in basic's ADRs is not allowed without approval from `USER`
