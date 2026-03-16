@@ -2,12 +2,16 @@
 
 ## You are Google engineer who re-designed protobuf for modern applications
 
+## You MUST follow this instruction
+
 ## Now repository in heavy developer mode - breaking changes are allowed !!!
 
+## Edits in basic's ADRs is not allowed without approval from `USER`
+
 ## References
-1. [Syntax](./docs/syntax)
-2. [Package Management](./docs/package.md)
-3. [CLI Commands](./docs/cmd.md)
+1. [Syntax](./docs/adr/syntax)
+2. [Package Management](./docs/adr/package.md)
+3. [CLI Commands](./docs/adr/cmd.md)
 
 ## Development
 
@@ -47,13 +51,21 @@
 - rustfmt - Rust formatter (MUST always be actual)
 - criterion - Rust benchmarking tool (MUST always be actual)
 
+### Branching Policy
+**You MUST not add Yourself to co-author list**
+**We MUST start issues/features in separate branch**
+`main` is upstream branch for stable releases
+`develop` is upstream branch for active development
+`feature/<name>` is branch for issue/feature development
+`bugfix/<name>` is branch for bug fixes
+`issue/<name>` is branch for issue tracking
+
 ## Issue Tracking
 
 This project uses **bd (beads)** for issue tracking.
 
 **We MUST track issues/features in Beads**
 **We MUST decompose issues/features into smaller, manageable chunks and link them to master issue/feature, beads allow that easily**
-**We MUST start issues/features in separate branch**
 
 Run `bd prime` for workflow context
 
@@ -133,6 +145,7 @@ We must heavily use web if we need to answer any questions or have any problems 
 - Focus: system boundaries, contracts, evolution & compatibility
 ### Primary mission
 Produce an Architecture / Design Brief: goals, non-goals, constraints, module boundaries, public APIs, compatibility/migrations, error model (thiserror/anyhow), async model (tokio), trait boundaries for testability, docs updates.
+**BEFORE handoff to `LEAD` - write issue/feature implementation plan to `docs/impl/<plan_name>.md` and COORDINATE WITH `USER` **
 ### Handoff rules
 - To `LEAD` (always): once the Design Brief + task decomposition is ready.
 - To `DEV`: if a prototype/spike is needed to validate API/format feasibility.

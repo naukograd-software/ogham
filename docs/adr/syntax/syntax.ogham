@@ -11,6 +11,7 @@
 
     // define behavior
     contract - the contract to define rpc
+    stream - mark contract as streaming (client/server/bidirectional)
     service - the service is scope of contracts
 
     // define extensions
