@@ -5,10 +5,12 @@ import std;
 // CODE: This block define type explanation for library
 
 // "uuid" library define UUID type
-type UUID = [16]u8;
+@validate::Length(exact=16)
+type UUID = []byte;
 
 // "ulid" library define ULID type
-type ULID = [16]u8;
+@validate::Length(exact=16)
+type ULID = []byte;
 
 // "decimal" library define Decimal type
 type Decimal {
@@ -26,7 +28,7 @@ shape ExampleAnnotationShape {
     string example_field_in_shape;
 }
 
-annotation ExampleAnnotation for shape|type|field|oneof|oneof_field|enum|enum_value|service|contract {
+annotation ExampleAnnotation for shape|type|field|oneof|oneof_field|enum|enum_value|service|rpc {
     /*
      CODE: annotations can use any types for own schema with default values (or without).
      If field has ? or has default value - it's optional.
@@ -104,7 +106,7 @@ annotation EnumField for enum_value {
 annotation Service for service {
     string base_url;
 }
-annotation Contract for contract {
+annotation Rpc for rpc {
     string raw_psql_func = "";
 }
 /*
@@ -132,6 +134,6 @@ annotation Contract for contract {
     }
     service UserService {
         @database::Contract(raw_psql_func="SELECT * FROM users WHERE id = $1")
-        contract GetUser(uuid.UUID) -> User;
+        rpc GetUser(uuid.UUID) -> User;
     }
 */

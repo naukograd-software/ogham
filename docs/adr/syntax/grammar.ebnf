@@ -19,24 +19,33 @@ top_level_decl    = type_decl
 
 type_decl         = { annotation_call } , "type" , type_name , ( type_alias | type_body ) ;
 
-type_alias        = "=" , type_ref , ";" ;
+type_alias        = "=" , ( type_ref | pick_type | omit_type ) , ";" ;
 
 type_body         = [ type_params ] , "{" , { type_member } , "}" ;
 
 type_member       = shape_injection
                   | field_decl
                   | oneof_decl
+                  | nested_type_decl
+                  | nested_enum_decl
                   | reserved_decl ;
+
+nested_type_decl  = type_decl ;
+nested_enum_decl  = enum_decl ;
 
 shape_injection   = identifier , "(" , integer , ".." , integer , ")" ;
 
-field_decl        = { annotation_call } , type_ref , identifier , "=" , integer , ";" ;
+(* Field with optional projection mapping *)
+field_decl        = { annotation_call } , type_ref , identifier , "=" , integer , [ "<-" , mapping_source ] , ";" ;
+
+(* Mapping source: SourceType.field or SourceType.nested.field or SourceType.oneof.*.field *)
+mapping_source    = qualified_name , { "." , ( identifier | "*" ) } ;
 
 oneof_decl        = { annotation_call } , "oneof" , identifier , "{" , { oneof_field } , "}" ;
 
-oneof_field       = { annotation_call } , type_ref , identifier , "=" , integer , ";" ;
+oneof_field       = { annotation_call } , type_ref , identifier , "=" , integer , [ "<-" , mapping_source ] , ";" ;
 
-reserved_decl     = "@reserved" , "(" , integer , ")" ;
+reserved_decl     = "@reserved" , "(" , integer , ")" , ";" ;
 
 (* === Shape === *)
 
@@ -56,13 +65,13 @@ enum_decl         = { annotation_call } , "enum" , identifier , "{" , { enum_val
 (* NOTE: Unspecified=0 is added implicitly by compiler *)
 enum_value_decl   = { annotation_call } , identifier , "=" , integer , ";" ;
 
-(* === Service & Contract === *)
+(* === Service & RPC === *)
 
-service_decl      = { annotation_call } , "service" , identifier , "{" , { contract_decl } , "}" ;
+service_decl      = { annotation_call } , "service" , identifier , "{" , { rpc_decl } , "}" ;
 
-contract_decl     = { annotation_call } , "contract" , identifier , "(" , contract_param , ")" , "->" , contract_param , ";" ;
+rpc_decl          = { annotation_call } , "rpc" , identifier , "(" , rpc_param , ")" , "->" , rpc_param , ";" ;
 
-contract_param    = "void"
+rpc_param         = "void"
                   | [ "stream" ] , type_ref
                   | [ "stream" ] , inline_type ;
 
@@ -75,10 +84,15 @@ annotation_decl   = "annotation" , identifier , "for" , annotation_targets , "{"
 annotation_targets = annotation_target , { "|" , annotation_target } ;
 
 annotation_target = "shape" | "type" | "field" | "oneof" | "oneof_field"
-                  | "enum" | "enum_value" | "service" | "contract" ;
+                  | "enum" | "enum_value" | "service" | "rpc" ;
 
 annotation_field  = type_ref , [ "?" ] , identifier , [ "=" , literal ] , ";"
-                  | identifier , ":" , inline_annotation_type ;
+                  | identifier , ":" , inline_annotation_type
+                  | annotation_composition ;
+
+(* Annotation composition: include another annotation as a member *)
+annotation_composition = qualified_name , "::" , identifier , [ "(" , [ annotation_args ] , ")" ] , ";"
+                       | qualified_name , "::" , identifier , "(" , literal , ")" , ";" ;
 
 inline_annotation_type = "{" , { annotation_field } , "}" ;
 
@@ -114,15 +128,10 @@ builtin_annotation = "default" , "(" , literal , ")"
 type_ref          = base_type , [ "?" ] ;
 
 base_type         = array_type
-                  | fixed_array_type
                   | map_type
-                  | pick_type
-                  | omit_type
                   | qualified_name ;
 
 array_type        = "[]" , type_ref ;
-
-fixed_array_type  = "[" , integer , "]" , type_ref ;
 
 map_type          = "map" , "<" , type_ref , "," , type_ref , ">" ;
 

@@ -10,9 +10,9 @@
 
 
     // define behavior
-    contract - the contract to define rpc
-    stream - mark contract as streaming (client/server/bidirectional)
-    service - the service is scope of contracts
+    rpc - define an RPC method
+    stream - mark rpc as streaming (client/server/bidirectional)
+    service - the service is scope of rpcs
 
     // define extensions
     annotation - define annotation for data (proto: OghamAnnotation { name, google.protobuf.Struct })

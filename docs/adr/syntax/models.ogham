@@ -40,7 +40,6 @@ import uuid;
     map - map<comparable, any> (proto: map<K, V>, keys always convertible to proto-compatible type)
     []T - repeated (proto: repeated T)
     T? - optional (proto: optional T)
-    [N]T - fixed array of N elements (proto: repeated T, size constraint is compile-time only)
 */
 
 type Id = uuid.UUID;

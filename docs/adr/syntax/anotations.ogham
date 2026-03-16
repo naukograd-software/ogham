@@ -13,7 +13,7 @@ package example;
     - enum      → proto: EnumOptions
     - enum_value → proto: EnumValueOptions
     - service   → proto: ServiceOptions
-    - contract  → proto: MethodOptions
+    - rpc       → proto: MethodOptions
 */
 
 @<library>::<annotation_name>(
@@ -64,5 +64,5 @@ service ExampleService {
     @<library>::<annotation_name>(
         // here params from annotation schema defined in library annotation block
     )
-    contract ExampleContract(ExampleType) -> ExampleType;
+    rpc ExampleContract(ExampleType) -> ExampleType;
 }

@@ -2,32 +2,20 @@
 
 ## Environment and Storage
 
-Ogham uses global storage for dependencies and binaries to avoid duplicating code in every project.
+Ogham uses global storage for dependencies and binaries.
 
 - **`OGHAM_HOME`**: Ogham root directory (default: `~/.ogham`).
-- **`OGHAM_BIN`**: Directory for compiled plugin binaries (default: `$OGHAM_HOME/bin`).
-- **`OGHAM_CACHE`**: Directory for downloaded package source code (default: `$OGHAM_HOME/pkg/mod`).
-- **`OGHAM_PROXY`**: Proxy server URL for package downloads (default: `direct`).
+- **`OGHAM_BIN`**: Compiled plugin binaries (default: `$OGHAM_HOME/bin`).
+- **`OGHAM_CACHE`**: Downloaded package source code (default: `$OGHAM_HOME/pkg/mod`).
+- **`OGHAM_PROXY`**: Proxy server URL(s) for package downloads (default: `direct`). Supports chaining: `https://internal.proxy,https://proxy.ogham.dev,direct`.
 
-### Proxy Architecture
+### Proxy Protocol
 
-Ogham can download packages through intermediate mirrors. This is useful for corporate networks, offline builds, and caching public repositories.
+REST API layout (similar to GOPROXY). For module `github.com/org/db` version `v1.2.0`:
 
-Behavior is controlled by the `OGHAM_PROXY` environment variable, which accepts a list of URLs separated by commas or pipes (`|`).
-
-Example:
-```bash
-export OGHAM_PROXY="https://proxy.company.internal,direct"
-```
-
-The `direct` keyword means direct access to the source (for example, cloning from GitHub via git/https). If a proxy returns 404 or 410, Ogham proceeds to the next entry in the list.
-
-**Proxy protocol (REST API):**
-The proxy server must serve static files using a defined layout (similar to GOPROXY). For module `github.com/org/db` and version `v1.2.0`:
-
-- `GET /github.com/org/db/@v/v1.2.0.info` - metadata as JSON (version, commit date).
-- `GET /github.com/org/db/@v/v1.2.0.mod` - the `ogham.toml` file for that version.
-- `GET /github.com/org/db/@v/v1.2.0.zip` - source archive for the module.
+- `GET /github.com/org/db/@v/v1.2.0.info` — metadata as JSON (version, commit date).
+- `GET /github.com/org/db/@v/v1.2.0.mod` — the `ogham.mod.yaml` file.
+- `GET /github.com/org/db/@v/v1.2.0.zip` — source archive.
 
 ### Directory Structure
 
@@ -35,42 +23,59 @@ The proxy server must serve static files using a defined layout (similar to GOPR
 $OGHAM_HOME/
 ├── bin/                # Compiled plugin binaries (ogham-gen-*)
 │   ├── ogham-gen-database@v2.0.0
-│   └── ogham-gen-grpc@v1.0.3
+│   └── ogham-gen-go@v1.0.3
+├── git/                # Git repository cache
+│   ├── db/             # Bare clones (shared across projects)
+│   └── checkouts/      # Revision-specific checkouts
 └── pkg/
     └── mod/            # Module source code (read-only cache)
         └── github.com/
             └── org/
                 └── database@v2.0.0/
-                    ├── ogham.toml
+                    ├── ogham.mod.yaml
                     └── ...
 ```
 
 ## Module System
 
-Works similarly to Go. A module is the root unit identified by a URL path. A package is a directory inside a module.
+A module is the root unit identified by a URL path. A package is a directory inside a module.
 
 ```
 myproject/
-├── ogham.toml          # module manifest
-├── ogham.lock          # lock file (generated automatically)
+├── ogham.mod.yaml      # module manifest
+├── ogham.gen.yaml      # generation config (optional)
 ├── models/
-│   ├── user.ogham      # package models
-│   └── order.ogham     # package models
+│   ├── user.ogham
+│   └── order.ogham
 └── api/
-    └── contracts.ogham # package api
+    └── contracts.ogham
 ```
 
-Files in the same directory belong to one package and can reference each other's types directly without `import`. Dependency packages are stored globally in `OGHAM_CACHE`.
+Files in the same directory belong to one package and can reference each other's types directly without `import`.
+
+## Two Files
+
+### `ogham.mod.yaml` — Module Manifest
+
+Declares who the module is, what it depends on, and (for plugins) how to build.
+
+Present in every module. Travels with the package when published.
+
+### `ogham.gen.yaml` — Generation Config
+
+Declares how to generate code: which plugins to run, where to put output.
+
+Present only in projects that generate code. Not published — each consumer has their own.
 
 ## Import
 
 ```
 import uuid;                          // standard library
 import github.com/org/database;       // external dependency
-import github.com/org/database/pg;    // external dependency subpackage
+import github.com/org/database/pg;    // subpackage
 ```
 
-The last path segment becomes the name used in code:
+Last path segment becomes the name:
 
 ```
 import github.com/org/database;
@@ -79,7 +84,7 @@ import github.com/org/database;
 type User { ... }
 ```
 
-Use aliases to resolve naming conflicts:
+Aliases resolve conflicts:
 
 ```
 import github.com/org/database as mydb;
@@ -88,463 +93,279 @@ import github.com/other/database as otherdb;
 
 ## Visibility
 
-- **Uppercase** - exported from the package (`User`, `OrderStatus`, `Table`)
-- **lowercase** - package-internal only (`userHelper`, `internalShape`)
+- **Uppercase** — exported (`User`, `Table`)
+- **lowercase** — package-private (`userHelper`)
 
-## Manifest: ogham.toml
+## ogham.mod.yaml
 
-The manifest defines module metadata, dependencies, features, and plugin configuration.
+### Schema Package
 
-```toml
-[package]
-name = "github.com/org/project"
-version = "1.2.0"
-description = "E-commerce schema definitions"
-license = "MIT"
-ogham = ">=0.1.0"                     # minimum compiler version
+```yaml
+module: github.com/myteam/myproject
+ogham: ">= 0.1.0"
+version: 0.1.0
+description: E-commerce schema definitions
+license: MIT
 
-[dependencies]
-"github.com/ogham/std" = "^1.0.0"
-"github.com/ogham/uuid" = "^1.0.0"
-"github.com/org/database" = { version = "^2.0.0", features = ["postgres", "go"] }
+require:
+  github.com/ogham/std: ^1.0.0
+  github.com/ogham/uuid: ^1.0.0
+  github.com/org/database: ^2.0.0       # provides annotations, used in .ogham code
+  github.com/org/go: ^1.0.0             # codegen plugin
 
-[features]
-default = ["grpc-api"]
-grpc-api = []
-rest-api = []
-admin-panel = ["grpc-api"]            # admin-panel enables grpc-api
-
-# Optional dependencies activated through features
-[features.dependencies]
-grpc-api = { "github.com/org/grpc-gen" = "^1.0.0" }
-rest-api = { "github.com/org/rest-gen" = "^1.0.0" }
+replace:
+  github.com/org/database:
+    path: ../database-fork
 ```
 
-### Section [package]
+### Plugin Package
+
+A plugin is a module that also has a `plugin` section:
+
+```yaml
+module: github.com/org/database
+version: 2.0.0
+description: Database codegen plugin for Ogham
+
+require:
+  github.com/ogham/std: ^1.0.0
+
+plugin:
+  build: go build -o ogham-gen-database ./cmd
+```
+
+### Fields
+
+#### Module fields
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `name` | yes | Full module path (URL-based, as in Go) |
+| `module` | yes | Full module path (URL-based) |
 | `version` | yes | Semver version |
+| `ogham` | no | Minimum compiler version |
 | `description` | no | Description |
 | `license` | no | SPDX license identifier |
-| `ogham` | no | Minimum compatible compiler version |
 
-### Section [dependencies]
+#### `require` section
+
+Dependencies used in `.ogham` code (schema packages, annotation providers) and codegen plugins.
 
 Versions follow semver ranges:
 
 | Syntax | Meaning |
 |--------|---------|
-| `"^1.2.0"` | `>=1.2.0, <2.0.0` |
-| `"~1.2.0"` | `>=1.2.0, <1.3.0` |
-| `"=1.2.0"` | Exact version |
-| `">=1.0.0, <3.0.0"` | Explicit range |
+| `^1.2.0` | `>=1.2.0, <2.0.0` |
+| `~1.2.0` | `>=1.2.0, <1.3.0` |
+| `=1.2.0` | Exact version |
+| `>=1.0.0, <3.0.0` | Explicit range |
 
-### Section [features]
+##### Git Dependencies
 
-Similar to Cargo. A feature is a named flag that:
-- Enables optional dependencies
-- Is passed to plugins as context
-- Can activate other features (transitively)
-- Can activate dependency features (via `"dep/feature"` syntax)
+```yaml
+require:
+  github.com/org/timestamps:
+    git: https://github.com/org/timestamps.git
+    tag: v1.0.0
 
-`default` defines features enabled by default. Consumers can override this:
+  github.com/org/experimental:
+    git: https://github.com/org/experimental.git
+    branch: next
 
-```toml
-[dependencies]
-"github.com/org/project" = { version = "^1.0.0", default-features = false, features = ["rest-api"] }
+  github.com/org/debug:
+    git: https://github.com/org/debug.git
+    rev: a1b2c3d
 ```
 
-### Feature Requirements (propagation)
+Git dependencies are cached in `$OGHAM_HOME/git/`. `git` and version range are mutually exclusive.
 
-A plugin can require specific features from its dependencies. As in Cargo, this uses **additive unification**: all requested features are enabled.
+##### Path Dependencies
 
-```toml
-# ogham.toml of plugin ogham-gen-go-pgx
-[package]
-name = "github.com/org/go-pgx"
-
-[dependencies]
-# Hard requirement: database MUST have "go" feature
-"github.com/org/database" = { version = "^2.0.0", features = ["go"] }
-
-[features]
-default = ["go"]
-go = ["github.com/org/database/go"]    # our "go" feature enables "go" on database
+```yaml
+require:
+  my-plugin:
+    path: ../plugins/my-plugin
 ```
 
-If two plugins require different features on the same dependency, all features are enabled (union). Features must be additive: enabling one should not break code that works without it.
+For local development only. `ogham publish` rejects modules with path dependencies.
 
-## Lock File: ogham.lock
+#### `replace` section
 
-Generated automatically. Contains the resolved dependency graph with exact versions and checksums. Similar to `go.sum`. Must be committed to the repository.
+Override any dependency with a local path or git fork:
 
-```toml
-[[lock]]
-name = "github.com/ogham/uuid"
-version = "1.0.3"
-checksum = "sha256:abc123..."
+```yaml
+replace:
+  github.com/org/database:
+    path: ../database-fork
 
-[[lock]]
-name = "github.com/org/database"
-version = "2.1.0"
-checksum = "sha256:def456..."
-dependencies = ["github.com/ogham/std@1.0.0"]
-features = ["postgres", "go"]
+  github.com/ogham/uuid:
+    git: https://github.com/me/uuid.git
+    branch: fix-parsing
 ```
 
-## CLI Commands
+Rules:
+- Only applies in the root module. Replace in transitive dependencies is ignored.
+- `ogham publish` rejects modules with active `replace` entries.
 
-CLI commands are documented in a separate file: [cmd.md](cmd.md).
+#### `plugin` section
 
----
-
-# Plugin System
-
-A plugin is a module that defines annotations and provides code generation and/or validation.
-
-## Plugin Naming Convention
-
-Plugin binaries follow the `ogham-gen-<name>` convention (similar to `protoc-gen-*`):
-
-- `github.com/org/database` -> `ogham-gen-database`
-- `github.com/org/grpc` -> `ogham-gen-grpc`
-- `github.com/org/go-pgx` -> `ogham-gen-go-pgx`
-
-The binary name is derived automatically from the last module path segment with the `ogham-gen-` prefix.
-
-**Discovery**: the compiler searches for the binary in this order:
-1. `$OGHAM_BIN/ogham-gen-<name>@<version>` - specific version
-2. `$PATH` - globally installed plugins
-
-## Plugin Lifecycle & Distribution
-
-1. **Install**: `ogham get` or `ogham install` downloads source code into `$OGHAM_CACHE`.
-2. **Build**: `ogham` runs the `build` command from `[plugin]` automatically. Output: `$OGHAM_BIN/ogham-gen-<name>@<version>`. **build is required** for stdio plugins.
-3. **Invoke**: the compiler finds `ogham-gen-<name>` and runs it via stdio or connects via gRPC.
-
-## Plugin Protocol
-
-### stdio
-
-The compiler starts `ogham-gen-<name>` as a process and communicates via stdin/stdout.
-
-```
-ogham compile -> stdin: OghamCompileRequest (protobuf) -> [ogham-gen-*] -> stdout: OghamCompileResponse (protobuf)
-```
-
-In proto mode, the plugin receives standard `google.protobuf.compiler.CodeGeneratorRequest`:
-
-```
-ogham compile --proto -> stdin: CodeGeneratorRequest (protobuf) -> [ogham-gen-*] -> stdout: CodeGeneratorResponse (protobuf)
-```
-
-### gRPC
-
-The compiler connects to a running plugin gRPC service.
-
-```
-ogham compile -> gRPC call: PluginService.Generate(OghamCompileRequest) -> OghamCompileResponse
-```
-
-gRPC is useful for:
-- Heavy plugins with long cold start time
-- Plugin-as-a-service setups (shared in CI)
-- Watch mode (plugin keeps state between compilations)
-
-## Plugin Manifest
-
-If a module is a plugin, `ogham.toml` includes a `[plugin]` section:
-
-```toml
-[package]
-name = "github.com/org/database"
-version = "2.0.0"
-description = "Database codegen plugin for Ogham"
-
-[plugin]
-protocol = "stdio"                    # "stdio" | "grpc"
-build = "go build -o ogham-gen-database ./cmd"  # REQUIRED for stdio
-
-# For grpc:
-# protocol = "grpc"
-# build = "go build -o ogham-gen-database ./cmd"  # required - builds gRPC server
-# address = "localhost:50051"          # default address (overridable by consumer)
-
-# What the plugin provides
-provides = ["annotations", "codegen"] # "annotations" | "codegen" | "validation"
-
-# Code generation target languages
-targets = ["go", "typescript", "rust"]
-
-[features]
-default = ["ogham"]
-ogham = []                            # receives OghamCompileRequest (native AST)
-proto = []                            # receives CodeGeneratorRequest (protobuf standard)
-
-[plugin.options]
-# Options passed to plugin invocation (configured by consumer)
-output_dir = { type = "string", default = "gen/" }
-orm = { type = "string", default = "sqlc", enum = ["sqlc", "sqlx", "gorm"] }
-```
-
-### Section [plugin]
+Present only in plugin modules.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `protocol` | yes | Invocation protocol: `stdio` or `grpc` |
-| `build` | **yes** | Plugin build command. Required - every plugin must define how it is built |
-| `address` | grpc only | gRPC service address (`host:port`) |
-| `provides` | yes | Provided capabilities: `annotations`, `codegen`, `validation` |
-| `targets` | codegen only | Code generation target languages |
+| `build` | yes | Shell command to build the plugin binary |
 
-### Feature: `proto`
+The build command must produce a binary named `ogham-gen-<last-segment-of-module-path>`. All plugins receive `OghamCompileRequest` via stdin.
 
-A plugin can support two input modes via features:
+## ogham.gen.yaml
 
-| Feature | Input | Description |
-|---------|-------|-------------|
-| `ogham` | `OghamCompileRequest` | Native Ogham AST - typed and complete |
-| `proto` | `CodeGeneratorRequest` | Standard protobuf input - protoc ecosystem compatibility |
+Present only in projects that generate code.
 
-A plugin with the `proto` feature can work with `.proto` files, so it can participate in the proto pipeline alongside standard `protoc-gen-*` plugins.
+```yaml
+generate:
+  plugins:
+    # ogham plugin from require — compiler builds binary automatically
+    - name: github.com/org/database
+      out: internal/db/gen/
+      opts:
+        orm: sqlx
 
-### Section [plugin.options]
+    # ogham plugin from require
+    - name: github.com/org/go
+      out: internal/models/
 
-Typed options that a consumer can override in `ogham.toml`:
+    # ogham plugin via gRPC
+    - name: github.com/org/go-pgx
+      grpc: localhost:50051
+      out: internal/db/gen/
 
-```toml
-# In consumer ogham.toml
-[generate.options."github.com/org/database"]
-output_dir = "src/generated/"
-orm = "sqlx"
+    # external binary — relative to project root
+    - path: ./tools/my-custom-plugin
+      out: gen/
 ```
 
-## Generation Modes
+### Plugin entry fields
 
-### Native Mode (default)
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | * | Full module path from `require` in `ogham.mod.yaml` |
+| `path` | * | External binary: full path, relative path, or short name (searched in `$PATH`) |
+| `grpc` | no | gRPC address (`host:port`). Overrides stdio invocation for `name` plugins |
+| `out` | yes | Output directory for generated files |
+| `opts` | no | Key-value options passed to the plugin |
 
-The compiler parses `.ogham` files and sends `OghamCompileRequest` to plugins:
+`name` and `path` are mutually exclusive — one must be specified.
+
+### Plugin resolution for `name`
+
+1. `$OGHAM_BIN/ogham-gen-<name>@<version>` — pre-built binary
+2. If not found, compiler runs `build` from the plugin's `ogham.mod.yaml`
+3. Built binary cached in `$OGHAM_BIN`
+
+### Plugin resolution for `path`
+
+1. If absolute or relative path — use directly
+2. If short name — search in `$PATH`
+
+### Execution order
+
+Plugins execute in the order listed in `ogham.gen.yaml`. User controls the order.
+
+### Generation pipeline
 
 ```
-*.ogham -> ogham compiler -> OghamCompileRequest -> ogham-gen-* plugins -> generated code
+*.ogham → ogham compiler → OghamCompileRequest → ogham-gen-* plugins → generated code
 ```
 
-Only `ogham-gen-*` plugins are used.
+All plugins receive `OghamCompileRequest` via stdin and respond with `OghamCompileResponse` via stdout. See [wire.md](wire.md) for serialization formats.
 
-### Proto Mode
+## Dependency Resolution
 
-The compiler first generates `.proto` files from `.ogham`, then runs plugins:
+Ogham uses **Minimal Version Selection (MVS)**:
 
-```
-*.ogham -> ogham compiler -> *.proto (with OghamAnnotation options)
-                              ↓
-                    plugin invocation:
-                    ├── ogham-gen-* (with proto feature, receive CodeGeneratorRequest)
-                    ├── protoc-gen-* (standard protobuf plugins)
-                    └── generated code
-```
+1. Collect all version requirements across the dependency graph.
+2. For each package, select the **minimum** version that satisfies all requirements.
+3. Each package resolves to exactly **one version**. Multiple versions of the same package are not allowed — schema type identity must be unambiguous.
 
-In proto mode:
-- Annotations are serialized as `OghamAnnotation { name, google.protobuf.Struct }` (see `ogham/options.proto`)
-- Standard `protoc-gen-*` plugins are allowed (`protoc-gen-go`, `protoc-gen-go-grpc`, `protoc-gen-grpc-gateway`, etc.)
-- `protoc-gen-*` plugins are discovered via `$PATH` (standard protobuf discovery)
-- All plugins receive the same `CodeGeneratorRequest` and are independent from each other
+### Why MVS?
 
-## Consumer Configuration
+- **Deterministic** — same `ogham.mod.yaml` files → same resolution, no lock file needed.
+- **No backtracking** — single pass, simple to implement.
+- **Conservative** — `ogham update` only bumps what you ask for.
+- **Correct for schemas** — minimizes surprise version changes.
 
-Consumers define which plugins to use and with what parameters in their `ogham.toml`:
-
-```toml
-[package]
-name = "github.com/myteam/myproject"
-version = "0.1.0"
-
-[dependencies]
-"github.com/ogham/std" = "^1.0.0"
-"github.com/ogham/uuid" = "^1.0.0"
-"github.com/org/database" = { version = "^2.0.0", features = ["postgres", "go"] }
-"github.com/org/grpc-gen" = { version = "^1.0.0", features = ["go"] }
-
-[generate]
-mode = "proto"                        # "proto" | "native" (default: "native")
-
-# Which plugins to run during compilation and in what order
-plugins = [
-    # ogham plugins (ogham-gen-*)
-    "github.com/org/database",
-    "github.com/org/grpc-gen",
-    # standard protobuf plugins (protoc-gen-*) - proto mode only
-    "protoc-gen-go",
-    "protoc-gen-go-grpc",
-]
-
-[generate.options."github.com/org/database"]
-output_dir = "internal/db/gen/"
-orm = "sqlx"
-
-[generate.options."protoc-gen-go"]
-output_dir = "internal/pb/"
-```
-
-## Local Development
-
-Local paths are supported for plugin development. In this mode, `ogham` watches plugin source changes.
-
-### Local Path Dependencies
-
-You can point a dependency to a local plugin directory in `ogham.toml`:
-
-```toml
-[dependencies]
-"my-plugin" = { path = "../plugins/my-plugin" }
-```
-
-The compiler rebuilds the plugin on the next `ogham compile` run if files in that directory changed. Binaries for local `path` dependencies are executed directly from their build location without polluting `OGHAM_BIN`.
-
-### Bootstrapping
-
-Create a new plugin scaffold in the current directory:
+## CLI Commands
 
 ```bash
-ogham init --plugin <name>
+# Dependencies
+ogham get github.com/org/database             # add dependency
+ogham get github.com/org/database@2.1.0       # specific version
+ogham install                                  # fetch all dependencies
+ogham update                                   # update versions
+ogham vendor                                   # copy to vendor/
+
+# Generation
+ogham generate                                 # run all plugins from ogham.gen.yaml
+ogham generate --plugin=database               # run single plugin
+
+# Proto export
+ogham proto export ./proto/                    # export .proto files for external toolchains
+
+# Plugin development
+ogham init --plugin <name>                     # scaffold a new plugin
+
+# Remote plugins
+ogham serve --plugin <name> --address :50051   # serve plugin as gRPC
 ```
-
-This generates a base `ogham.toml` with a `[plugin]` section, a `build` command, and file layout. The binary name will be `ogham-gen-<name>`.
-
-## Remote Plugins (gRPC)
-
-Plugins can run as remote services.
-
-### Serving a Plugin
-
-If a plugin supports `grpc`, it can be started as a server:
-
-```bash
-ogham serve --plugin <name> --address :50051
-```
-
-The Ogham compiler can connect to remote plugins:
-
-```toml
-# In consumer ogham.toml
-[dependencies]
-"remote-plugin" = { version = "^1.0.0", address = "grpc.prod.internal:50051" }
-```
-
-This enables shared plugin usage in CI/CD or distributed teams without installing binaries on every machine.
 
 ## Full Example
 
-Project: Go + PostgreSQL + gRPC with proto mode.
+Project: Go + PostgreSQL.
 
 ```
 myproject/
-├── ogham.toml
-├── ogham.lock
+├── ogham.mod.yaml
+├── ogham.gen.yaml
 ├── schemas/
-│   ├── models.ogham        # package schemas - types and enums
-│   └── api.ogham           # package schemas - services and contracts
+│   ├── models.ogham
+│   └── api.ogham
 ├── internal/
-│   ├── db/gen/             # <- output from ogham-gen-database
-│   ├── api/gen/            # <- output from ogham-gen-grpc
-│   └── pb/                 # <- output from protoc-gen-go + protoc-gen-go-grpc
+│   ├── models/         ← ogham-gen-go
+│   └── db/gen/         ← ogham-gen-database
 ```
 
-```toml
-# ogham.toml
-[package]
-name = "github.com/myteam/myproject"
-version = "0.1.0"
-ogham = ">=0.1.0"
+```yaml
+# ogham.mod.yaml
+module: github.com/myteam/myproject
+version: 0.1.0
+ogham: ">= 0.1.0"
 
-[dependencies]
-"github.com/ogham/std" = "^1.0.0"
-"github.com/ogham/uuid" = "^1.0.0"
-"github.com/org/database" = { version = "^2.0.0", features = ["postgres", "go"] }
-"github.com/org/grpc-gen" = { version = "^1.0.0", features = ["go"] }
+require:
+  github.com/ogham/std: ^1.0.0
+  github.com/ogham/uuid: ^1.0.0
+  github.com/org/database: ^2.0.0
+  github.com/org/go: ^1.0.0
+```
 
-[features]
-default = ["proto"]
-proto = []
-
-[generate]
-mode = "proto"
-plugins = [
-    # ogham plugins - read OghamAnnotation options from .proto
-    "github.com/org/database",
-    "github.com/org/grpc-gen",
-    # standard protobuf plugins - generate Go code from .proto
-    "protoc-gen-go",
-    "protoc-gen-go-grpc",
-]
-
-[generate.options."github.com/org/database"]
-output_dir = "internal/db/gen/"
-orm = "sqlx"
-
-[generate.options."github.com/org/grpc-gen"]
-output_dir = "internal/api/gen/"
-
-[generate.options."protoc-gen-go"]
-output_dir = "internal/pb/"
-
-[generate.options."protoc-gen-go-grpc"]
-output_dir = "internal/pb/"
+```yaml
+# ogham.gen.yaml
+generate:
+  plugins:
+    - name: github.com/org/go
+      out: internal/models/
+    - name: github.com/org/database
+      out: internal/db/gen/
+      opts:
+        orm: sqlx
 ```
 
 ```bash
-ogham compile                         # parses schemas/, generates .proto, invokes all plugins
-ogham compile --plugin=database       # only one plugin
-ogham compile --target=go             # only for a specific target
-ogham compile --mode=native           # override: native mode instead of proto
+ogham generate
 ```
-
-### Pipeline in proto mode
 
 ```
 schemas/*.ogham
-    ↓ ogham compiler (parse + generate .proto)
-schemas/*.proto  (contain OghamAnnotation options in ogham/options.proto)
-    ↓ parallel plugin invocation (all receive the same CodeGeneratorRequest)
-    ├── ogham-gen-database    → internal/db/gen/     (reads OghamAnnotation "database::Table", etc.)
-    ├── ogham-gen-grpc        → internal/api/gen/    (reads OghamAnnotation "grpc::*")
-    ├── protoc-gen-go         → internal/pb/         (generates Go structs)
-    └── protoc-gen-go-grpc    → internal/pb/         (generates gRPC stubs)
-```
-
-## Feature Dependency Example
-
-Plugin `ogham-gen-go-pgx` depends on `database` and requires its `go` feature:
-
-```toml
-# ogham.toml of plugin ogham-gen-go-pgx
-[package]
-name = "github.com/org/go-pgx"
-version = "1.0.0"
-
-[dependencies]
-"github.com/org/database" = { version = "^2.0.0", features = ["go", "postgres"] }
-
-[features]
-default = ["ogham", "proto"]
-ogham = []
-proto = []
-go = ["github.com/org/database/go"]    # our "go" feature -> enables "go" on database
-
-[plugin]
-build = "go build -o ogham-gen-go-pgx ./cmd"
-protocol = "stdio"
-provides = ["codegen"]
-targets = ["go"]
-```
-
-When a consumer adds `go-pgx`, the `go` feature on `database` is enabled automatically:
-
-```toml
-# consumer ogham.toml
-[dependencies]
-"github.com/org/go-pgx" = "^1.0.0"
-# database automatically gets features = ["go", "postgres"] via go-pgx
+    ↓ ogham compiler → OghamCompileRequest
+    ↓ plugins in listed order
+    ├── ogham-gen-go          → internal/models/   (Go structs + protowire + protojson)
+    └── ogham-gen-database    → internal/db/gen/   (SQL mappings, queries)
 ```

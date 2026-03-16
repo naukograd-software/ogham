@@ -1,0 +1,236 @@
+package example;
+
+import uuid;
+import github.com/org/database;
+
+// ============================================================================
+// Source types
+// ============================================================================
+
+type User {
+    uuid.UUID id = 1;
+    string first_name = 2;
+    string last_name = 3;
+    string personal_email = 4;
+    string work_email = 5;
+    string street = 6;
+    string city = 7;
+    string zip = 8;
+    string country = 9;
+    string bio = 10;
+    string avatar_url = 11;
+    string password_hash = 12;
+    uint64 created_at = 13;
+}
+
+type UserStats {
+    uuid.UUID user_id = 1;
+    int64 total_orders = 2;
+    int64 total_spent = 3;
+}
+
+type UserSettings {
+    uuid.UUID user_id = 1;
+    string theme = 2;
+    string locale = 3;
+}
+
+// ============================================================================
+// 1. Independent field numbers — projection numbers differ from source
+// ============================================================================
+
+// User.id=1, User.email=4, User.avatar_url=11
+// Projection assigns its own numbers: 1, 2, 3
+type UserMini {
+    uuid.UUID id = 1 <- User.id;              // User field 1 → projection field 1
+    string email = 2 <- User.personal_email;   // User field 4 → projection field 2
+    string avatar_url = 3 <- User.avatar_url;  // User field 11 → projection field 3
+}
+
+// ============================================================================
+// 2. Simple projection — pick fields, rename
+// ============================================================================
+
+@database::Table(table_name="users")
+type UserAccount {
+    @database::Column(column_name="id", primary_key=true)
+    uuid.UUID id = 1 <- User.id;
+    string first_name = 2 <- User.first_name;
+    string last_name = 3 <- User.last_name;
+    string email = 4 <- User.personal_email;       // renamed
+    string password_hash = 5 <- User.password_hash;
+    uint64 created_at = 6 <- User.created_at;
+}
+
+// ============================================================================
+// 2. Another table from the same source
+// ============================================================================
+
+@database::Table(table_name="user_profiles")
+type UserProfile {
+    uuid.UUID user_id = 1 <- User.id;              // renamed
+    string bio = 2 <- User.bio;
+    string avatar_url = 3 <- User.avatar_url;
+    string street = 4 <- User.street;
+    string city = 5 <- User.city;
+    string zip = 6 <- User.zip;
+    string country = 7 <- User.country;
+}
+
+// ============================================================================
+// 3. New fields without source mapping
+// ============================================================================
+
+type UserSearch {
+    uuid.UUID id = 1 <- User.id;
+    string name = 2 <- User.first_name;
+    string email = 3 <- User.personal_email;
+    string bio = 4 <- User.bio;
+    string search_text = 5;                   // new field, plugin fills it
+}
+
+// ============================================================================
+// 4. Grouping via separate projection
+// ============================================================================
+
+type UserAddress {
+    string street = 1 <- User.street;
+    string city = 2 <- User.city;
+    string zip = 3 <- User.zip;
+    string country = 4 <- User.country;
+}
+
+type UserResponse {
+    uuid.UUID id = 1 <- User.id;
+    string first_name = 2 <- User.first_name;
+    string last_name = 3 <- User.last_name;
+    UserAddress address = 4;                  // nested projection
+    string avatar_url = 5 <- User.avatar_url;
+    string display_name = 6;                  // new field
+}
+
+// ============================================================================
+// 5. Fields into oneof
+// ============================================================================
+
+type UserContact {
+    uuid.UUID id = 1 <- User.id;
+
+    oneof email {
+        string personal = 2 <- User.personal_email;
+        string work = 3 <- User.work_email;
+    }
+}
+
+// ============================================================================
+// 6. Multi-source projection
+// ============================================================================
+
+type UserDashboard {
+    uuid.UUID id = 1 <- User.id;
+    string name = 2 <- User.first_name;
+    string email = 3 <- User.personal_email;
+    int64 total_orders = 4 <- UserStats.total_orders;
+    int64 total_spent = 5 <- UserStats.total_spent;
+    string theme = 6 <- UserSettings.theme;
+    string locale = 7 <- UserSettings.locale;
+}
+
+// ============================================================================
+// 7. Oneof common fields extraction
+// ============================================================================
+
+type Payment {
+    int64 id = 1;
+    oneof method {
+        CardPayment card = 2;
+        BankPayment bank = 3;
+    }
+}
+
+type CardPayment {
+    string transaction_id = 1;
+    int64 amount = 2;
+    string card_number = 3;
+}
+
+type BankPayment {
+    string transaction_id = 1;
+    int64 amount = 2;
+    string iban = 3;
+}
+
+type PaymentFlat {
+    int64 id = 1 <- Payment.id;
+
+    // common fields from all oneof variants
+    string transaction_id = 2 <- Payment.method.*.transaction_id;
+    int64 amount = 3 <- Payment.method.*.amount;
+
+    // unique fields stay in oneof
+    oneof details {
+        string card_number = 4 <- Payment.method.card.card_number;
+        string iban = 5 <- Payment.method.bank.iban;
+    }
+}
+
+// ============================================================================
+// 8. Oneof into optional fields
+// ============================================================================
+
+type Event {
+    int64 id = 1;
+    oneof payload {
+        ClickEvent click = 2;
+        ViewEvent view = 3;
+    }
+}
+
+type ClickEvent {
+    string url = 1;
+}
+
+type ViewEvent {
+    string page = 1;
+}
+
+type EventFlat {
+    int64 id = 1 <- Event.id;
+    ClickEvent? click = 2 <- Event.payload.click;
+    ViewEvent? view = 3 <- Event.payload.view;
+}
+
+// ============================================================================
+// 9. Mapping from nested fields (flatten)
+// ============================================================================
+
+type Order {
+    int64 id = 1;
+    Address billing = 2;
+    Address shipping = 3;
+}
+
+type Address {
+    string street = 1;
+    string city = 2;
+    string zip = 3;
+}
+
+type OrderFlat {
+    int64 id = 1 <- Order.id;
+    string billing_street = 2 <- Order.billing.street;
+    string billing_city = 3 <- Order.billing.city;
+    string shipping_street = 4 <- Order.shipping.street;
+    string shipping_city = 5 <- Order.shipping.city;
+}
+
+// ============================================================================
+// 10. Projection chain
+// ============================================================================
+
+type UserCard {
+    uuid.UUID id = 1 <- UserResponse.id;
+    string first_name = 2 <- UserResponse.first_name;
+    string avatar_url = 3 <- UserResponse.avatar_url;
+    // chain: UserCard.first_name <- UserResponse.first_name <- User.first_name
+}
