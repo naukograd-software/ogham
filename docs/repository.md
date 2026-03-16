@@ -8,14 +8,14 @@
 ogham/
 ├── crates/                  # Rust workspace
 │   ├── ogham-cli/           # CLI binary (`ogham`)
-│   ├── ogham-compiler/      # Parser, type checker, linter, AST → IR lowering
+│   ├── ogham-compiler/      # Lexer (logos), parser (rowan), type checker, linter, AST → IR lowering
 │   ├── ogham-core/          # Shared types and utilities
-│   ├── ogham-lsp/           # Language Server Protocol implementation
+│   ├── ogham-lsp/           # Language Server Protocol implementation (tower-lsp)
 │   ├── ogham-plugin-sdk/    # Rust Plugin SDK (ogham-plugin-sdk crate)
 │   └── ogham-proto/         # Generated Rust code from proto/ (prost/tonic)
 │
-├── proto/                   # Protobuf definitions — source of truth for IR/AST
-│   ├── ogham/               # .proto files
+├── proto/                   # Protobuf definitions — source of truth for IR
+│   ├── ogham/               # .proto files (ir/, compiler/, common/)
 │   ├── assets/              # easyp templates (Cargo.toml.tmpl, etc.)
 │   └── easyp.yaml           # easyp generation config
 │
@@ -49,7 +49,7 @@ ogham/
 
 ### Compiler (`crates/ogham-compiler`)
 
-Lexer, parser, type checker, linter, and the AST → IR lowering pass. Takes `.ogham` source files, produces a fully resolved IR that plugins consume. See [adr/plugin_sdk.md](adr/plugin_sdk.md) for the compilation pipeline.
+Logos lexer, hand-written recursive-descent parser producing a lossless CST (rowan), typed AST layer, type checker, linter, and AST → IR lowering. AST is pure Rust — not defined in proto. See [adr/plugin_sdk.md](adr/plugin_sdk.md) for the full pipeline.
 
 ### CLI (`crates/ogham-cli`)
 
@@ -57,7 +57,7 @@ The `ogham` binary. Package management (`get`, `install`, `update`, `vendor`), c
 
 ### LSP (`crates/ogham-lsp`)
 
-Language server for editor integration: diagnostics, hover, completion, go-to-definition. Works against the AST (not IR).
+Language server for editor integration: diagnostics, hover, completion, go-to-definition. Works against the CST/AST (not IR).
 
 ### Core (`crates/ogham-core`)
 
@@ -65,7 +65,7 @@ Shared types and utilities used across compiler, CLI, and LSP.
 
 ### Proto definitions (`proto/`)
 
-The `.proto` files are the single source of truth for AST, IR, and compiler request/response messages. Generated code flows into `crates/ogham-proto` (Rust), `go/oghamgen/` (Go), and `ts/oghamgen/` (TypeScript).
+The `.proto` files are the single source of truth for IR and compiler protocol messages. No AST definitions — AST lives only in Rust. Generated code flows into `crates/ogham-proto` (Rust), `go/oghamgen/` (Go), and `ts/oghamgen/` (TypeScript).
 
 Regenerate after changing `.proto` files:
 
@@ -79,11 +79,11 @@ Part of the Cargo workspace. Depends on `ogham-proto` for IR types, adds the plu
 
 ### Go Plugin SDK (`go/oghamgen`)
 
-Go module with its own `go.mod`. Import path: `github.com/oghamlang/ogham/go/oghamgen`. Contains generated IR types from proto and hand-written plugin runner / codegen helpers.
+Go module with its own `go.mod`. Import path: `github.com/oghamlang/ogham/go/oghamgen`. IR types generated from `proto/` + hand-written plugin runner / codegen helpers.
 
 ### TypeScript Plugin SDK (`ts/oghamgen`)
 
-npm package with its own `package.json`. Published as `@ogham/oghamgen`. Contains generated IR types from proto and hand-written plugin runner / codegen helpers.
+npm package with its own `package.json`. Published as `@ogham/oghamgen`. IR types generated from `proto/` + hand-written plugin runner / codegen helpers.
 
 ### SDK summary
 
@@ -101,6 +101,6 @@ All SDKs are tested in CI alongside the compiler — a proto change that breaks 
 
 ## Why monorepo
 
-- **Proto changes are validated end-to-end.** Changing an IR message updates the Rust proto crate and all SDKs in one PR. CI catches breakage across languages before merge.
+- **Proto changes are validated end-to-end.** Changing an IR message in proto regenerates all SDKs in one PR. CI catches breakage across languages before merge.
 - **Compiler and SDK versions stay in sync.** No cross-repo version matrix. One release tag covers the compiler and all SDKs.
 - **Single CI pipeline.** Lint, test, and publish everything from one place.
