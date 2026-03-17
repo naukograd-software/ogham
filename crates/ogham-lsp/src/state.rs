@@ -30,6 +30,12 @@ pub struct WorkspaceIndex {
     pub symbols: DashMap<String, Vec<SymbolDef>>,
 }
 
+impl Default for WorkspaceIndex {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WorkspaceIndex {
     pub fn new() -> Self {
         Self {
