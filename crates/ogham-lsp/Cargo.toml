@@ -11,4 +11,13 @@ rust-version.workspace = true
 keywords = ["ogham", "schema", "lsp", "language-server"]
 categories = ["development-tools"]
 
+[[bin]]
+name = "ogham-lsp"
+path = "src/main.rs"
+
 [dependencies]
+ogham-compiler = { path = "../ogham-compiler" }
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["full"] }
+dashmap = "6"
+rowan = "0.15.17"

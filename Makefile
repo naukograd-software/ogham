@@ -32,6 +32,7 @@ build: # Build all binaries into ./bin/
 	cargo build --release
 	@mkdir -p bin
 	@cp target/release/ogham bin/ 2>/dev/null || true
+	@cp target/release/ogham-lsp bin/ 2>/dev/null || true
 	@cp target/release/ogham-gen-proto bin/ 2>/dev/null || true
 	@echo "Binaries:"
 	@ls -lh bin/
