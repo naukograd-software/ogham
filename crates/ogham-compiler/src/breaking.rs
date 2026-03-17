@@ -5,7 +5,7 @@
 //! - WARNING: JSON/codegen-breaking (field renamed, optional changed, rpc renamed)
 //! - INFO: safe changes (new fields, new types, annotation changes)
 
-use ogham_proto::ogham::ir;
+use ogham_proto::oghamproto::ir;
 use std::collections::HashMap;
 
 // ── Violation types ────────────────────────────────────────────────────

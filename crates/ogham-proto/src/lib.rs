@@ -1,21 +1,21 @@
 // @generated
-pub mod ogham {
-    #[cfg(feature = "ogham-common")]
-    // @@protoc_insertion_point(attribute:ogham.common)
+pub mod oghamproto {
+    #[cfg(feature = "oghamproto-common")]
+    // @@protoc_insertion_point(attribute:oghamproto.common)
     pub mod common {
-        include!("ogham/common/ogham.common.rs");
-        // @@protoc_insertion_point(ogham.common)
+        include!("oghamproto/common/oghamproto.common.rs");
+        // @@protoc_insertion_point(oghamproto.common)
     }
-    #[cfg(feature = "ogham-compiler")]
-    // @@protoc_insertion_point(attribute:ogham.compiler)
+    #[cfg(feature = "oghamproto-compiler")]
+    // @@protoc_insertion_point(attribute:oghamproto.compiler)
     pub mod compiler {
-        include!("ogham/compiler/ogham.compiler.rs");
-        // @@protoc_insertion_point(ogham.compiler)
+        include!("oghamproto/compiler/oghamproto.compiler.rs");
+        // @@protoc_insertion_point(oghamproto.compiler)
     }
-    #[cfg(feature = "ogham-ir")]
-    // @@protoc_insertion_point(attribute:ogham.ir)
+    #[cfg(feature = "oghamproto-ir")]
+    // @@protoc_insertion_point(attribute:oghamproto.ir)
     pub mod ir {
-        include!("ogham/ir/ogham.ir.rs");
-        // @@protoc_insertion_point(ogham.ir)
+        include!("oghamproto/ir/oghamproto.ir.rs");
+        // @@protoc_insertion_point(oghamproto.ir)
     }
 }

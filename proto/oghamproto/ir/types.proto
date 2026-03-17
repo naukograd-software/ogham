@@ -1,0 +1,279 @@
+syntax = "proto3";
+
+package oghamproto.ir;
+
+import "oghamproto/common/source.proto";
+
+option go_package = "github.com/oghamlang/go/oghamproto/ir";
+
+// ── Top-level IR container ─────────────────────────────────────────────
+
+// Fully resolved module — the output of the compiler's AST → IR lowering.
+// Everything is inline; plugins never need to resolve references.
+message Module {
+    string package = 1;
+    repeated Type types = 2;
+    repeated Enum enums = 3;
+    repeated Service services = 4;
+}
+
+// ── Type ───────────────────────────────────────────────────────────────
+
+message Type {
+    string name = 1;
+    string full_name = 2;                   // package-qualified: "example.User"
+    repeated Field fields = 3;
+    repeated OneofGroup oneofs = 4;
+    repeated Type nested_types = 5;
+    repeated Enum nested_enums = 6;
+    repeated AnnotationCall annotations = 7;
+    repeated TypeBackRef back_references = 8; // types that reference this type
+    TypeTrace trace = 9;                     // origin trace
+    common.SourceLocation location = 10;
+}
+
+message Field {
+    string name = 1;
+    uint32 number = 2;
+    TypeReference type = 3;                 // fully resolved, inline
+    bool is_optional = 4;
+    bool is_repeated = 5;
+    repeated AnnotationCall annotations = 6;
+    FieldMapping mapping = 7;               // projection source, if present
+    FieldTrace trace = 8;                   // origin trace (shape, etc.)
+    common.SourceLocation location = 9;
+}
+
+message OneofGroup {
+    string name = 1;
+    repeated OneofField fields = 2;
+    repeated AnnotationCall annotations = 3;
+    common.SourceLocation location = 4;
+}
+
+message OneofField {
+    string name = 1;
+    uint32 number = 2;
+    TypeReference type = 3;
+    repeated AnnotationCall annotations = 4;
+    FieldMapping mapping = 5;
+    common.SourceLocation location = 6;
+}
+
+// ── Enum ───────────────────────────────────────────────────────────────
+
+message Enum {
+    string name = 1;
+    string full_name = 2;
+    repeated EnumValue values = 3;          // includes implicit Unspecified=0
+    repeated AnnotationCall annotations = 4;
+    common.SourceLocation location = 5;
+}
+
+message EnumValue {
+    string name = 1;
+    int32 number = 2;
+    bool is_removed = 3;
+    string fallback = 4;                    // non-empty if is_removed
+    repeated AnnotationCall annotations = 5;
+    common.SourceLocation location = 6;
+}
+
+// ── Service & RPC ──────────────────────────────────────────────────────
+
+message Service {
+    string name = 1;
+    string full_name = 2;
+    repeated Rpc rpcs = 3;
+    repeated AnnotationCall annotations = 4;
+    common.SourceLocation location = 5;
+}
+
+message Rpc {
+    string name = 1;
+    RpcParam input = 2;
+    RpcParam output = 3;
+    repeated AnnotationCall annotations = 4;
+    common.SourceLocation location = 5;
+}
+
+message RpcParam {
+    bool is_void = 1;
+    bool is_stream = 2;
+    TypeReference type = 3;                 // resolved inline (monomorphized if generic)
+}
+
+// ── Type references (recursive, fully inline) ──────────────────────────
+
+message TypeReference {
+    oneof kind {
+        ScalarType scalar = 1;
+        MessageType message_type = 2;       // resolved inline — fields, annotations, etc.
+        EnumType enum_type = 3;             // resolved inline — all values
+        MapType map = 4;
+    }
+}
+
+// Primitive/scalar type.
+message ScalarType {
+    ScalarKind scalar_kind = 1;
+}
+
+enum ScalarKind {
+    SCALAR_KIND_NONE = 0;
+    BOOL = 1;
+    STRING = 2;
+    BYTES = 3;
+    INT8 = 4;
+    INT16 = 5;
+    INT32 = 6;
+    INT64 = 7;
+    UINT8 = 8;
+    UINT16 = 9;
+    UINT32 = 10;
+    UINT64 = 11;
+    FLOAT = 12;
+    DOUBLE = 13;
+}
+
+// Reference to a message type — carries the full type inline.
+message MessageType {
+    string name = 1;
+    string full_name = 2;
+    repeated Field fields = 3;
+    repeated OneofGroup oneofs = 4;
+    repeated Enum nested_enums = 5;
+    repeated AnnotationCall annotations = 6;
+}
+
+// Reference to an enum type — carries all values inline.
+message EnumType {
+    string name = 1;
+    string full_name = 2;
+    repeated EnumValue values = 3;
+}
+
+message MapType {
+    TypeReference key = 1;
+    TypeReference value = 2;
+}
+
+// ── Annotations (calls with full definitions inline) ───────────────────
+
+message AnnotationCall {
+    string library = 1;                     // "database", "validate", or "" for built-in
+    string name = 2;                        // "Table", "Required", "default", etc.
+    repeated AnnotationArgument arguments = 3;
+    AnnotationDefinition definition = 4;    // full definition inline
+    common.SourceLocation location = 5;
+}
+
+message AnnotationArgument {
+    string name = 1;
+    AnnotationLiteral value = 2;
+}
+
+message AnnotationLiteral {
+    oneof value {
+        string string_value = 1;
+        int64 int_value = 2;
+        double float_value = 3;
+        bool bool_value = 4;
+        AnnotationStruct struct_value = 5;
+        AnnotationList list_value = 6;
+    }
+}
+
+message AnnotationStruct {
+    map<string, AnnotationLiteral> fields = 1;
+}
+
+message AnnotationList {
+    repeated AnnotationLiteral values = 1;
+}
+
+// Full annotation definition (schema).
+message AnnotationDefinition {
+    string library = 1;
+    string name = 2;
+    repeated string targets = 3;            // "type", "field", "enum", etc.
+    repeated AnnotationParameter parameters = 4;
+    repeated AnnotationCompositionRef compositions = 5; // included annotations
+}
+
+message AnnotationParameter {
+    string name = 1;
+    TypeReference type = 2;
+    bool is_optional = 3;
+    AnnotationLiteral default_value = 4;    // present if has default
+}
+
+// Reference to a composed annotation.
+message AnnotationCompositionRef {
+    string library = 1;
+    string name = 2;
+    repeated AnnotationArgument arguments = 3;
+}
+
+// ── Projection mappings ────────────────────────────────────────────────
+
+// Source mapping for a projected field.
+message FieldMapping {
+    // Full chain from immediate source to root.
+    // Example: UserCard.name <- UserResponse.name <- User.first_name
+    // chain[0] = immediate source, chain[last] = root source.
+    repeated MappingLink chain = 1;
+}
+
+// One link in a projection chain.
+message MappingLink {
+    string source_type_name = 1;            // "User"
+    string source_type_full_name = 2;       // "example.User"
+    string source_field_name = 3;           // "first_name"
+    repeated string path = 4;               // for nested: ["billing", "street"] or ["method", "*", "tx_id"]
+    TypeReference source_field_type = 5;    // inline
+    repeated AnnotationCall source_field_annotations = 6; // inline
+}
+
+// ── Trace — origin metadata ────────────────────────────────────────────
+
+// Trace on a Type: where did this type come from?
+message TypeTrace {
+    oneof origin {
+        GenericOrigin generic = 1;          // monomorphized from a generic
+        PickOmitOrigin pick_omit = 2;       // created via Pick/Omit
+    }
+}
+
+message GenericOrigin {
+    string source_name = 1;                 // "Paginated"
+    repeated string type_arguments = 2;     // ["User"]
+}
+
+message PickOmitOrigin {
+    string kind = 1;                        // "Pick" or "Omit"
+    string source_type_name = 2;            // "User"
+    repeated string field_names = 3;        // fields picked/omitted
+}
+
+// Trace on a Field: where did this field come from?
+message FieldTrace {
+    ShapeOrigin shape = 1;                  // non-null if field came from a shape injection
+}
+
+message ShapeOrigin {
+    string shape_name = 1;                  // "Timestamps"
+    string shape_full_name = 2;             // "example.Timestamps"
+    uint32 injection_range_start = 3;
+    uint32 injection_range_end = 4;
+    common.SourceLocation shape_location = 5;
+}
+
+// ── Back-references ────────────────────────────────────────────────────
+
+// A reference from another type to this type.
+message TypeBackRef {
+    string referencing_type_name = 1;
+    string referencing_type_full_name = 2;
+    string field_name = 3;                  // the field that holds the reference
+}

@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 /// Compile a project directory and return the IR module + compile result.
 pub fn compile_project(
     dir: &Path,
-) -> Result<(ogham_proto::ogham::ir::Module, pipeline::CompileResult), String> {
+) -> Result<(ogham_proto::oghamproto::ir::Module, pipeline::CompileResult), String> {
     let mod_file = manifest::load_mod_file(dir).ok();
     if let Some(ref m) = mod_file {
         eprintln!("module: {} v{}", m.module, m.version);
@@ -120,7 +120,7 @@ pub fn run(args: GenerateArgs) -> Result<(), String> {
 
 fn run_breaking_check(
     dir: &Path,
-    new_module: &ogham_proto::ogham::ir::Module,
+    new_module: &ogham_proto::oghamproto::ir::Module,
 ) -> Result<(), String> {
     let mod_file = match manifest::load_mod_file(dir) {
         Ok(m) => m,
@@ -210,7 +210,7 @@ fn run_breaking_check(
 }
 
 fn serialize_request(
-    module: &ogham_proto::ogham::ir::Module,
+    module: &ogham_proto::oghamproto::ir::Module,
     _args: &GenerateArgs,
 ) -> Result<Vec<u8>, String> {
     use prost::Message;
@@ -381,7 +381,7 @@ fn run_plugin(name: &str, explicit_path: Option<&str>, request_bytes: &[u8]) -> 
     }
 
     use prost::Message;
-    let response = ogham_proto::ogham::compiler::OghamCompileResponse::decode(output.stdout.as_slice())
+    let response = ogham_proto::oghamproto::compiler::OghamCompileResponse::decode(output.stdout.as_slice())
         .map_err(|e| format!("failed to decode plugin response: {}", e))?;
 
     for err in &response.errors {
@@ -418,9 +418,9 @@ fn run_plugin(name: &str, explicit_path: Option<&str>, request_bytes: &[u8]) -> 
 fn run_plugin_grpc(
     name: &str,
     addr: &str,
-    request: ogham_proto::ogham::compiler::OghamCompileRequest,
+    request: ogham_proto::oghamproto::compiler::OghamCompileRequest,
 ) -> Result<(), String> {
-    use ogham_proto::ogham::compiler::ogham_plugin_api_client::OghamPluginApiClient;
+    use ogham_proto::oghamproto::compiler::ogham_plugin_api_client::OghamPluginApiClient;
 
     let addr = if addr.starts_with("http") {
         addr.to_string()

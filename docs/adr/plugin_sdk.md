@@ -146,9 +146,9 @@ The `.proto` files are the **single source of truth** for the IR. Generated code
 
 | SDK | Generated from |
 |-----|---------------|
-| Rust (`ogham-proto`, `ogham-plugin-sdk`) | `proto/` via prost/tonic |
-| Go (`go/oghamgen`) | `proto/` via protoc-gen-go |
-| TypeScript (`ts/oghamgen`) | `proto/` via protoc-gen-ts |
+| Rust (`ogham-proto`, `oghamgen`) | `proto/` via prost/tonic |
+| Go (`go/oghamproto`, `go/oghamgen`) | `proto/` via protoc-gen-go |
+| TypeScript (`ts/oghamproto`, `ts/oghamgen`) | `proto/` via protoc-gen-es |
 
 ## Plugin SDK
 
@@ -163,15 +163,15 @@ The `.proto` files are the **single source of truth** for the IR. Generated code
 | SDK | Package |
 |-----|---------|
 | Rust | `oghamgen` (crates.io) |
-| Go | `github.com/oghamlang/ogham/go/oghamgen` |
-| TypeScript | `@ogham/oghamgen` |
+| Go | `github.com/oghamlang/go/oghamgen` |
+| TypeScript | `@ogham/sdk` |
 
 ### Example (Go)
 
 ```go
 package main
 
-import "github.com/oghamlang/ogham/go/oghamgen"
+import "github.com/oghamlang/go/oghamgen"
 
 func main() {
     oghamgen.Run(func(req *oghamgen.CompileRequest) (*oghamgen.CompileResponse, error) {

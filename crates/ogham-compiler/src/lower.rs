@@ -4,7 +4,7 @@
 //! `TypeReference` proto message carrying all fields, annotations, etc.
 
 use crate::hir::*;
-use ogham_proto::ogham::{compiler, ir};
+use ogham_proto::oghamproto::{compiler, ir};
 
 /// Maximum recursion depth for inline type expansion.
 const MAX_DEPTH: usize = 8;

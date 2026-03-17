@@ -31,8 +31,8 @@ mod runner;
 mod codegen;
 
 // Re-export proto types for plugin authors
-pub use ogham_proto::ogham::ir::*;
-pub use ogham_proto::ogham::compiler::{
+pub use ogham_proto::oghamproto::ir::*;
+pub use ogham_proto::oghamproto::compiler::{
     OghamCompileRequest as CompileRequest,
     OghamCompileResponse as CompileResponse,
     GeneratedFile,
