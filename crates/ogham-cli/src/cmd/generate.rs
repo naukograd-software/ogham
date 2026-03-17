@@ -21,9 +21,20 @@ pub fn compile_project(
     let schemas_dir = dir.join("schemas");
     let search_dir = if schemas_dir.is_dir() { &schemas_dir } else { dir };
 
-    let sources = discover_ogham_files(search_dir)?;
+    let mut sources = discover_ogham_files(search_dir)?;
     if sources.is_empty() {
         return Err(format!("no .ogham files found in {}", search_dir.display()));
+    }
+
+    // Resolve and add dependency sources
+    if let Ok(deps) = ogham_compiler::pkg::resolve_deps(dir) {
+        if let Ok(dep_sources) = ogham_compiler::pkg::collect_dep_sources(&deps) {
+            let dep_count = dep_sources.len();
+            sources.extend(dep_sources);
+            if dep_count > 0 {
+                eprintln!("  + {} file(s) from dependencies", dep_count);
+            }
+        }
     }
 
     eprintln!("compiling {} file(s)...", sources.len());

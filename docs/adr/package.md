@@ -11,11 +11,30 @@ Ogham uses global storage for dependencies and binaries.
 
 ### Proxy Protocol
 
-REST API layout (similar to GOPROXY). For module `github.com/org/db` version `v1.2.0`:
+The registry proxy is a **separate binary** (`ogham-proxy`), not part of the `ogham` CLI. It serves packages over HTTP, similar to GOPROXY.
+
+REST API layout for module `github.com/org/db` version `v1.2.0`:
 
 - `GET /github.com/org/db/@v/v1.2.0.info` — metadata as JSON (version, commit date).
 - `GET /github.com/org/db/@v/v1.2.0.mod` — the `ogham.mod.yaml` file.
 - `GET /github.com/org/db/@v/v1.2.0.zip` — source archive.
+- `GET /github.com/org/db/@v/list` — available versions.
+
+The proxy fetches from upstream sources (git, other proxies) and caches locally. Organizations can run an internal proxy for private packages.
+
+Configure via `OGHAM_PROXY`:
+```bash
+# Default: no proxy, git/path only
+export OGHAM_PROXY=direct
+
+# Single proxy
+export OGHAM_PROXY=https://proxy.ogham.dev
+
+# Chain: try internal first, then public, then direct git
+export OGHAM_PROXY=https://internal.proxy,https://proxy.ogham.dev,direct
+```
+
+When `OGHAM_PROXY` is not set or set to `direct`, the package manager resolves dependencies via git clone or local path only. Version range dependencies (`^1.0.0`) require either a proxy or a git source.
 
 ### Directory Structure
 
@@ -282,13 +301,64 @@ All plugins receive `OghamCompileRequest` via stdin and respond with `OghamCompi
 
 Ogham uses **Minimal Version Selection (MVS)**:
 
-1. Collect all version requirements across the dependency graph.
+1. Collect all version requirements across the dependency graph (including transitive dependencies).
 2. For each package, select the **minimum** version that satisfies all requirements.
 3. Each package resolves to exactly **one version**. Multiple versions of the same package are not allowed — schema type identity must be unambiguous.
+4. Deduplicate: if A and B both depend on C, C is resolved once.
+
+### Version Ranges
+
+| Syntax | Meaning | Example |
+|--------|---------|---------|
+| `^1.2.3` | `>=1.2.3, <2.0.0` | Compatible updates within major |
+| `~1.2.3` | `>=1.2.3, <1.3.0` | Patch-level updates only |
+| `=1.2.3` | Exact version | Pin to specific version |
+| `>=1.2.3` | At least this version | Floor constraint |
+| `*` | Any version | Accept anything |
+
+For `^0.x.y` (pre-1.0): `^0.2.3` means `>=0.2.3, <0.3.0` (minor is treated as major).
+
+### Conflict Detection
+
+When two packages require different major versions of the same dependency, the resolver reports an error:
+
+```
+error: version conflict for mylib: ^1.0.0 and ^2.0.0 are incompatible.
+All dependents must agree on compatible version ranges.
+```
+
+### Transitive Dependencies
+
+Dependencies are resolved recursively. If `A` depends on `B`, and `B` depends on `C`, then `C` is automatically resolved and available during compilation. Path dependencies in transitive deps are resolved relative to the dependency's own directory.
+
+Depth limit is 32. Circular dependencies are detected and handled (each module is resolved at most once).
+
+### Lock File
+
+`ogham install` writes `ogham.lock.yaml` with resolved versions and git commit hashes. While MVS is deterministic for version ranges, the lock file provides reproducibility for git dependencies (pinning exact commits).
+
+```yaml
+# ogham.lock.yaml (auto-generated)
+locked:
+  github.com/org/database:
+    version: "v2.1.0"
+    commit: "abc123def456"
+    source: git
+  github.com/oghamlang/std:
+    version: "^0.1.0"
+    source: cache
+```
+
+### Integrity Check
+
+`ogham install` verifies cached dependencies:
+- Directory exists and is readable
+- Git dependencies have clean worktree (warns on uncommitted changes)
+- At least one `.ogham` file exists in the dependency
 
 ### Why MVS?
 
-- **Deterministic** — same `ogham.mod.yaml` files → same resolution, no lock file needed.
+- **Deterministic** — same `ogham.mod.yaml` files → same resolution.
 - **No backtracking** — single pass, simple to implement.
 - **Conservative** — `ogham update` only bumps what you ask for.
 - **Correct for schemas** — minimizes surprise version changes.

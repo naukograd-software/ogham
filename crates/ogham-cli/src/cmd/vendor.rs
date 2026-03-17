@@ -1,4 +1,7 @@
 pub fn run() -> Result<(), String> {
-    eprintln!("ogham vendor");
-    Err("not implemented yet".to_string())
+    let dir = std::path::Path::new(".");
+    eprintln!("vendoring dependencies...");
+    ogham_compiler::pkg::vendor(dir)?;
+    eprintln!("done");
+    Ok(())
 }

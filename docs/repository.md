@@ -101,6 +101,10 @@ Part of the Cargo workspace. Depends on `ogham-proto` for IR types, adds the plu
 
 Built-in plugin that generates `.proto3` files from Ogham schemas. Uses the `oghamgen` SDK — serves as a reference implementation for plugin authors. Run via `ogham generate --plugin=proto`.
 
+### Registry Proxy (planned: `ogham-proxy`)
+
+Separate binary — serves packages over HTTP (GOPROXY-compatible protocol). Not part of the `ogham` CLI. See [package.md](adr/package.md) for proxy protocol details. The CLI resolves dependencies via git clone or local path when no proxy is configured.
+
 ### Go Plugin SDK (`go/oghamgen`)
 
 Go module with its own `go.mod`. Import path: `github.com/oghamlang/ogham/go/oghamgen`. IR types generated from `proto/` + hand-written plugin runner / codegen helpers.

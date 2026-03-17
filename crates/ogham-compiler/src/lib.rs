@@ -12,4 +12,5 @@ pub mod resolve;
 pub mod stdlib;
 pub mod lower;
 pub mod breaking;
+pub mod pkg;
 pub mod pipeline;

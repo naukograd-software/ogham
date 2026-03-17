@@ -24,12 +24,14 @@ ogham dump --dir examples/store                # dump specific project
 ## Package Manager
 
 ```bash
-ogham get github.com/org/database             # add dependency to ogham.mod.yaml, fetch and build (if plugin)
-ogham get github.com/org/database@2.1.0       # add a specific version
-ogham install                                  # install/build all dependencies for the current project
-ogham update                                   # update dependency versions
-ogham vendor                                   # copy dependencies into vendor/
+ogham get github.com/org/database             # add dependency (auto-detects git source for github.com/*)
+ogham get github.com/org/database@v2.1.0      # add with specific version/tag
+ogham install                                  # resolve + fetch all deps, write ogham.lock.yaml, verify integrity
+ogham update                                   # re-fetch latest versions within ranges
+ogham vendor                                   # copy deps into vendor/ (without .git)
 ```
+
+`ogham install` writes `ogham.lock.yaml` for reproducible git dependency resolution. Dependency sources: path (`path:`), git (`git:` + tag/branch/rev), version range (`^1.0.0` — requires proxy or git source). See [package.md](package.md) for full details.
 
 ## Breaking Change Detection
 
