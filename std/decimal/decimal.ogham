@@ -1,0 +1,14 @@
+package decimal;
+
+import github.com/oghamlang/std/validate;
+
+// Decimal — arbitrary-precision decimal number.
+// Represented as coefficient * 10^exponent.
+// Example: 123.45 = Decimal { coefficient: 12345, exponent: -2 }
+type Decimal {
+    int64 coefficient = 1;
+    // Exponent range covers practical decimal precision.
+    // -128..127 allows up to 128 decimal digits of precision.
+    @validate::Range(min=-128, max=127)
+    int32 exponent = 2;
+}

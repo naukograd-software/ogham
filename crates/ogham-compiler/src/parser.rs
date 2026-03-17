@@ -1189,35 +1189,28 @@ impl<'s> Parser<'s> {
 
     // ── Token expectations ─────────────────────────────────────────────
 
+    /// Accept an identifier or any keyword in identifier position.
+    /// Keywords are valid identifiers in contexts like package names,
+    /// field names, type names, import paths, etc.
     fn expect_ident(&mut self) {
         self.eat_trivia();
-        if self.current() == Some(Ident) {
-            self.bump();
-        } else {
-            let offset = self.current_offset();
-            self.errors.push(ParseError {
-                message: "expected identifier".into(),
-                range: offset..offset,
-            });
+        if let Some(k) = self.current() {
+            if k == Ident || is_keyword(k) {
+                self.bump();
+                return;
+            }
         }
+        let offset = self.current_offset();
+        self.errors.push(ParseError {
+            message: "expected identifier".into(),
+            range: offset..offset,
+        });
     }
 
-    /// Accept an identifier or a keyword that can appear in identifier position
-    /// (e.g., annotation target names like `type`, `field`, `enum`).
+    /// Alias for `expect_ident` — kept for readability at call sites
+    /// where the intent is specifically to accept keywords (annotation targets, etc.).
     fn expect_ident_or_keyword(&mut self) {
-        self.eat_trivia();
-        match self.current() {
-            Some(Ident) | Some(KwType) | Some(KwShape) | Some(KwEnum)
-            | Some(KwService) | Some(KwRpc) | Some(KwOneof) | Some(KwFallback)
-            | Some(KwDefault) | Some(KwCast) | Some(KwRemoved) | Some(KwReserved) => {
-                self.bump();
-            }
-            // Annotation targets that are identifiers in EBNF but keywords here
-            _ => {
-                // Try as a plain ident
-                self.expect_ident();
-            }
-        }
+        self.expect_ident();
     }
 
     fn expect_int(&mut self) {
@@ -1236,6 +1229,16 @@ impl<'s> Parser<'s> {
 
 fn is_trivia(kind: SyntaxKind) -> bool {
     matches!(kind, Whitespace | LineComment | BlockComment)
+}
+
+fn is_keyword(kind: SyntaxKind) -> bool {
+    matches!(
+        kind,
+        KwPackage | KwImport | KwAs | KwType | KwShape | KwEnum | KwOneof
+        | KwService | KwRpc | KwAnnotation | KwFor | KwVoid | KwStream
+        | KwMap | KwPick | KwOmit | KwTrue | KwFalse | KwNow | KwSelf
+        | KwDefault | KwCast | KwRemoved | KwReserved | KwFallback
+    )
 }
 
 #[cfg(test)]

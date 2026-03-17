@@ -408,8 +408,8 @@ fn resolve_type_ref(
         }
 
         let dotted = segments.join(".");
-        diag.warning(file_name, 0..0, format!("unresolved type: {}", dotted));
-        return ResolvedType::Unresolved(interner.intern(&dotted));
+        diag.error(file_name, 0..0, format!("unresolved type: {}", dotted));
+        return ResolvedType::Error;
     }
 
     ResolvedType::Error
@@ -679,7 +679,7 @@ fn expand_shape_fields(
             let expanded = expand_shape_fields(*inc_id, arenas, interner, symbols, diag);
             result.extend(expanded);
         } else {
-            diag.warning("", 0..0, format!("unresolved shape include: {}", include_text));
+            diag.error("", 0..0, format!("unresolved shape include: {}", include_text));
         }
     }
 
@@ -1115,7 +1115,7 @@ fn resolve_mapping_chain(
     let type_id = match type_id {
         Some(id) => id,
         None => {
-            diag.warning("", 0..0, format!("projection: unresolved type {}", type_name));
+            diag.error("", 0..0, format!("projection: unresolved type {}", type_name));
             return vec![MappingLink {
                 source_type: la_arena::Idx::from_raw(la_arena::RawIdx::from_u32(0)),
                 source_field_name: *path.last().unwrap_or(&path[0]),

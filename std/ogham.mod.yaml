@@ -1,0 +1,5 @@
+module: github.com/oghamlang/std
+version: 0.1.0
+ogham: ">= 0.1.0"
+description: Ogham standard library — common types and validation annotations
+license: Apache-2.0

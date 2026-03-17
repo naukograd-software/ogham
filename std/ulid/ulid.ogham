@@ -1,0 +1,15 @@
+package ulid;
+
+import github.com/oghamlang/std/validate;
+
+// ULID — Universally Unique Lexicographically Sortable Identifier.
+// Binary representation: 128-bit, exactly 16 bytes.
+@cast(bytes)
+@validate::Length(exact=16)
+type ULID = bytes;
+
+// ULIDString — ULID in canonical Crockford Base32 string form: "01ARZ3NDEKTSV4RRFFQ69G5FAV".
+// 26 characters: 10 timestamp + 16 randomness.
+@validate::Length(exact=26)
+@validate::Pattern("^[0-9A-HJKMNP-TV-Z]{26}$")
+type ULIDString = string;

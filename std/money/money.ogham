@@ -1,0 +1,28 @@
+package money;
+
+import github.com/oghamlang/std/validate;
+
+// Money — an amount of money in a specific currency.
+// Follows the pattern from Google APIs and ISO 4217.
+//
+// Usage:
+//   import github.com/oghamlang/std/money;
+//
+//   type Order {
+//       string id = 1;
+//       money.Money total = 2;
+//       money.Money discount = 3;
+//   }
+type Money {
+    // ISO 4217 currency code: "USD", "EUR", "RUB", etc.
+    @validate::Length(exact=3)
+    @validate::Pattern("^[A-Z]{3}$")
+    string currency_code = 1;
+    // Whole units of the currency. Example: 1 USD = units=1.
+    int64 units = 2;
+    // Sub-unit amount in nanounits (10^-9 of a unit).
+    // Must be -999999999 to +999999999.
+    // Same sign as units (or zero).
+    @validate::Range(min=-999999999, max=999999999)
+    int32 nanos = 3;
+}

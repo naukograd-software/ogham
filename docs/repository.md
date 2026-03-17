@@ -19,6 +19,22 @@ ogham/
 │   ├── assets/              # easyp templates (Cargo.toml.tmpl, etc.)
 │   └── easyp.yaml           # easyp generation config
 │
+├── std/                     # Standard library — Ogham source files
+│   ├── uuid/                # github.com/oghamlang/std/uuid — UUID
+│   ├── ulid/                # github.com/oghamlang/std/ulid — ULID
+│   ├── time/                # github.com/oghamlang/std/time — Timestamp, ProtoTimestamp, Date, TimeOfDay, DateTime, TimeZone
+│   ├── duration/            # github.com/oghamlang/std/duration — Duration, ProtoDuration
+│   ├── decimal/             # github.com/oghamlang/std/decimal — Decimal
+│   ├── geo/                 # github.com/oghamlang/std/geo — LatLng, BoundingBox, GeoPoint
+│   ├── empty/               # github.com/oghamlang/std/empty — Empty (use `void` in RPCs instead)
+│   ├── fieldmask/           # github.com/oghamlang/std/fieldmask — FieldMask (partial updates)
+│   ├── money/               # github.com/oghamlang/std/money — Money (amount + ISO 4217 currency)
+│   ├── rpc/                 # github.com/oghamlang/std/rpc — CursorPagination, PageRequest, Sortable, RequestContext, Status, ResponseMeta
+│   ├── any/                 # github.com/oghamlang/std/any — Any (type_url + serialized bytes)
+│   ├── struct/              # github.com/oghamlang/std/struct — Struct, Value, ListValue (dynamic JSON-like data)
+│   ├── wrappers/            # github.com/oghamlang/std/wrappers — BoolValue, StringValue, Int64Value, ...
+│   └── validate/            # github.com/oghamlang/std/validate — Required, Length, Pattern, Range, Items, NotEmpty
+│
 ├── go/
 │   └── oghamgen/            # Go Plugin SDK (github.com/oghamlang/ogham/go/oghamgen)
 │

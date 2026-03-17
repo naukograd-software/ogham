@@ -8,5 +8,6 @@ pub mod diagnostics;
 pub mod hir;
 pub mod index;
 pub mod resolve;
+pub mod stdlib;
 pub mod lower;
 pub mod pipeline;

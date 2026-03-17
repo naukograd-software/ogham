@@ -61,9 +61,21 @@ fn child_token(parent: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxToken> {
     }).next()
 }
 
-/// Find the first token that is an identifier (possibly a keyword used in ident position).
+/// Find the first identifier token — skipping structural keywords that introduce
+/// declarations (`type`, `enum`, `shape`, `service`, `rpc`, `annotation`, `oneof`,
+/// `package`, `import`, `for`, `as`). Other keywords in identifier position are accepted.
 fn first_ident_token(parent: &SyntaxNode) -> Option<SyntaxToken> {
-    child_token(parent, SyntaxKind::Ident)
+    parent.children_with_tokens().find_map(|el| match el {
+        rowan::NodeOrToken::Token(t) => {
+            let k = t.kind();
+            if k == SyntaxKind::Ident || (k.is_keyword() && !k.is_structural_keyword()) {
+                Some(t)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    })
 }
 
 /// Collect all typed child nodes that can be cast to `T`.
@@ -139,7 +151,7 @@ impl ImportDecl {
                 rowan::NodeOrToken::Token(ref t) if t.kind() == SyntaxKind::KwAs => {
                     found_as = true;
                 }
-                rowan::NodeOrToken::Token(ref t) if found_as && t.kind() == SyntaxKind::Ident => {
+                rowan::NodeOrToken::Token(ref t) if found_as && (t.kind() == SyntaxKind::Ident || t.kind().is_keyword()) => {
                     return Some(t.clone());
                 }
                 _ => {}
@@ -169,6 +181,34 @@ impl ImportPath {
 impl SyntaxKind {
     fn is_trivia(self) -> bool {
         matches!(self, SyntaxKind::Whitespace | SyntaxKind::LineComment | SyntaxKind::BlockComment)
+    }
+
+    /// Keywords that introduce declarations — NOT valid as identifiers
+    /// in `first_ident_token` context (they precede the name).
+    pub fn is_structural_keyword(self) -> bool {
+        matches!(
+            self,
+            SyntaxKind::KwType | SyntaxKind::KwShape | SyntaxKind::KwEnum
+            | SyntaxKind::KwOneof | SyntaxKind::KwService | SyntaxKind::KwRpc
+            | SyntaxKind::KwAnnotation | SyntaxKind::KwPackage | SyntaxKind::KwImport
+            | SyntaxKind::KwFor | SyntaxKind::KwAs | SyntaxKind::KwStream
+            | SyntaxKind::KwPick | SyntaxKind::KwOmit
+        )
+    }
+
+    pub fn is_keyword(self) -> bool {
+        matches!(
+            self,
+            SyntaxKind::KwPackage | SyntaxKind::KwImport | SyntaxKind::KwAs
+            | SyntaxKind::KwType | SyntaxKind::KwShape | SyntaxKind::KwEnum
+            | SyntaxKind::KwOneof | SyntaxKind::KwService | SyntaxKind::KwRpc
+            | SyntaxKind::KwAnnotation | SyntaxKind::KwFor | SyntaxKind::KwVoid
+            | SyntaxKind::KwStream | SyntaxKind::KwMap | SyntaxKind::KwPick
+            | SyntaxKind::KwOmit | SyntaxKind::KwTrue | SyntaxKind::KwFalse
+            | SyntaxKind::KwNow | SyntaxKind::KwSelf | SyntaxKind::KwDefault
+            | SyntaxKind::KwCast | SyntaxKind::KwRemoved | SyntaxKind::KwReserved
+            | SyntaxKind::KwFallback
+        )
     }
 }
 

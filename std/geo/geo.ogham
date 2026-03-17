@@ -1,0 +1,26 @@
+package geo;
+
+import github.com/oghamlang/std/validate;
+
+// LatLng — geographic coordinates (WGS 84).
+type LatLng {
+    // Latitude in degrees. Range: -90.0 to +90.0.
+    @validate::Range(min_float=-90.0, max_float=90.0)
+    double lat = 1;
+    // Longitude in degrees. Range: -180.0 to +180.0.
+    @validate::Range(min_float=-180.0, max_float=180.0)
+    double lng = 2;
+}
+
+// BoundingBox — rectangular geographic area defined by two corners.
+type BoundingBox {
+    LatLng southwest = 1;
+    LatLng northeast = 2;
+}
+
+// GeoPoint — geographic point with optional altitude.
+type GeoPoint {
+    LatLng location = 1;
+    // Altitude in meters above WGS 84 ellipsoid. Optional.
+    double? altitude = 2;
+}

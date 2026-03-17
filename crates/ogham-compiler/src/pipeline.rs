@@ -6,6 +6,7 @@ use crate::hir::{Arenas, Interner, SymbolTable};
 use crate::index::{self, ParsedFile};
 use crate::parser;
 use crate::resolve;
+use crate::stdlib;
 
 /// Result of compiling a set of Ogham source files.
 pub struct CompileResult {
@@ -28,16 +29,46 @@ pub fn compile(sources: &[SourceFile]) -> CompileResult {
     let mut symbols = SymbolTable::default();
     let mut diag = Diagnostics::new();
 
-    // Phase 1: Parse all files
+    // Phase 1: Parse all user files and collect std imports
     let mut files: Vec<ParsedFile> = Vec::new();
+    let mut std_imports: Vec<String> = Vec::new();
+
     for source in sources {
         let parse = parser::parse(&source.content);
 
-        // Collect parse errors
         for err in &parse.errors {
             diag.error(&source.name, err.range.clone(), &err.message);
         }
 
+        let root = parse.syntax();
+        let pkg = ast::Root::cast(root.clone())
+            .and_then(|r| r.package_decl())
+            .and_then(|p| p.name().map(|t| t.text().to_string()))
+            .unwrap_or_else(|| "default".to_string());
+
+        // Collect std imports from this file
+        if let Some(r) = ast::Root::cast(root.clone()) {
+            for imp in r.imports() {
+                if let Some(path) = imp.path() {
+                    let path_text = path.text();
+                    if stdlib::is_std_import(&path_text) {
+                        std_imports.push(path_text);
+                    }
+                }
+            }
+        }
+
+        files.push(ParsedFile {
+            file_name: source.name.clone(),
+            root,
+            package: pkg,
+        });
+    }
+
+    // Parse and add required std sources
+    let std_sources = stdlib::resolve_std_imports(&std_imports);
+    for source in &std_sources {
+        let parse = parser::parse(&source.content);
         let root = parse.syntax();
         let pkg = ast::Root::cast(root.clone())
             .and_then(|r| r.package_decl())

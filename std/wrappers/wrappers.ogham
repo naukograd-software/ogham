@@ -1,0 +1,50 @@
+package wrappers;
+
+// Wrapper types for scalar values.
+// Use when you need to distinguish "field not set" from "field set to zero value".
+// In proto3, a scalar field cannot be null — wrapping it in a message makes it optional.
+//
+// Usage:
+//   import github.com/oghamlang/std/wrappers;
+//
+//   type User {
+//       wrappers.StringValue nickname = 1;   // null vs ""
+//       wrappers.BoolValue verified = 2;     // null vs false
+//       wrappers.Int64Value score = 3;       // null vs 0
+//   }
+
+type BoolValue {
+    bool value = 1;
+}
+
+type StringValue {
+    string value = 1;
+}
+
+type BytesValue {
+    bytes value = 1;
+}
+
+type Int32Value {
+    int32 value = 1;
+}
+
+type Int64Value {
+    int64 value = 1;
+}
+
+type Uint32Value {
+    uint32 value = 1;
+}
+
+type Uint64Value {
+    uint64 value = 1;
+}
+
+type FloatValue {
+    float value = 1;
+}
+
+type DoubleValue {
+    double value = 1;
+}

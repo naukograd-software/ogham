@@ -1,0 +1,116 @@
+package rpc;
+
+import github.com/oghamlang/std/validate;
+import github.com/oghamlang/std/any;
+import github.com/oghamlang/std/struct;
+
+// ── Pagination ─────────────────────────────────────────────────────────
+
+// CursorPagination — cursor-based pagination metadata for responses.
+// Usage:
+//   type ListUsersResponse {
+//       []User users = 1;
+//       rpc.CursorPagination(2..3)
+//   }
+shape CursorPagination {
+    // Opaque token to fetch the next page. Empty if no more pages.
+    string next_page_token;
+    // Total number of items across all pages. -1 if unknown.
+    int64 total_count;
+}
+
+// OffsetPagination — offset-based pagination metadata for responses.
+// Usage:
+//   type ListOrdersResponse {
+//       []Order orders = 1;
+//       rpc.OffsetPagination(2..4)
+//   }
+shape OffsetPagination {
+    int64 total_count;
+    int64 offset;
+    int64 limit;
+}
+
+// PageRequest — common pagination request parameters.
+// Usage:
+//   type ListUsersRequest {
+//       rpc.PageRequest(1..2)
+//       string filter = 3;
+//   }
+shape PageRequest {
+    // Maximum number of items to return.
+    @validate::Range(min=1, max=1000)
+    int32 page_size;
+    // Token from a previous response's next_page_token.
+    string page_token;
+}
+
+// ── Sorting ────────────────────────────────────────────────────────────
+
+// Sortable — adds sort parameters to a request.
+// Usage:
+//   type ListUsersRequest {
+//       rpc.PageRequest(1..2)
+//       rpc.Sortable(3..4)
+//   }
+shape Sortable {
+    // Field path to sort by: "created_at", "name", etc.
+    string order_by;
+    // Sort direction. True = descending, false = ascending.
+    bool descending;
+}
+
+// ── Request context ────────────────────────────────────────────────────
+
+// RequestContext — common request metadata for tracing and idempotency.
+// Usage:
+//   type CreateOrderRequest {
+//       rpc.RequestContext(1..3)
+//       Order order = 4;
+//   }
+shape RequestContext {
+    // Unique request ID for idempotency and tracing.
+    string request_id;
+    // Distributed trace ID.
+    string trace_id;
+    // Client-specified timeout in milliseconds.
+    int64 timeout_ms;
+}
+
+// ── Error handling ─────────────────────────────────────────────────────
+
+// Status — standard error response.
+// Compatible with google.rpc.Status pattern.
+type Status {
+    // gRPC/HTTP status code.
+    int32 code = 1;
+    // Human-readable error message.
+    string message = 2;
+    // Structured error details.
+    []any.Any details = 3;
+}
+
+// ErrorDetail — a single error detail with field-level granularity.
+type ErrorDetail {
+    // Field path that caused the error: "email", "address.zip".
+    string field = 1;
+    // Error description.
+    string description = 2;
+}
+
+// ── Response metadata ──────────────────────────────────────────────────
+
+// ResponseMeta — common response metadata.
+// Usage:
+//   type GetUserResponse {
+//       User user = 1;
+//       rpc.ResponseMeta(2..4)
+//   }
+shape ResponseMeta {
+    // Server request ID (may differ from client's request_id).
+    string request_id;
+    // Response timestamp in nanoseconds since epoch.
+    uint64 response_timestamp;
+    // Server processing duration in nanoseconds.
+    uint64 processing_duration;
+}

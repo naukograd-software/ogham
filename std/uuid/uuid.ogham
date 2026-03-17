@@ -1,0 +1,15 @@
+package uuid;
+
+import github.com/oghamlang/std/validate;
+
+// UUID — 128-bit universally unique identifier (RFC 4122).
+// Binary representation: exactly 16 raw bytes.
+@cast(bytes)
+@validate::Length(exact=16)
+type UUID = bytes;
+
+// UUIDString — UUID in canonical string form: "550e8400-e29b-41d4-a716-446655440000".
+// 36 characters: 8-4-4-4-12 hex digits with dashes.
+@validate::Length(exact=36)
+@validate::Pattern("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+type UUIDString = string;

@@ -1,0 +1,42 @@
+package struct;
+
+// Dynamic typing for unstructured data.
+// Compatible with google.protobuf.Struct / Value / ListValue.
+//
+// Usage:
+//   import github.com/oghamlang/std/struct;
+//
+//   type Config {
+//       string name = 1;
+//       struct.Struct metadata = 2;   // arbitrary JSON-like data
+//   }
+
+// Struct — unordered map of string keys to dynamically-typed values.
+// Represents a JSON object.
+type Struct {
+    map<string, Value> fields = 1;
+}
+
+// Value — a dynamically-typed value.
+// Represents any JSON value.
+type Value {
+    oneof kind {
+        NullValue null_value = 1;
+        double number_value = 2;
+        string string_value = 3;
+        bool bool_value = 4;
+        Struct struct_value = 5;
+        ListValue list_value = 6;
+    }
+}
+
+// ListValue — ordered list of dynamically-typed values.
+// Represents a JSON array.
+type ListValue {
+    []Value values = 1;
+}
+
+// NullValue — represents JSON null.
+enum NullValue {
+    Null = 1;
+}

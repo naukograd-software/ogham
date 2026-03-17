@@ -1,0 +1,38 @@
+package validate;
+
+// Required — field must be set (non-zero value).
+annotation Required for field {
+}
+
+// Length — string or bytes length constraints.
+annotation Length for field {
+    uint32? min;
+    uint32? max;
+    uint32? exact;
+}
+
+// Pattern — string must match a regular expression.
+annotation Pattern for field {
+    string pattern;
+}
+
+// Range — numeric value constraints.
+annotation Range for field {
+    int64? min;
+    int64? max;
+    double? min_float;
+    double? max_float;
+    bool exclusive_min = false;
+    bool exclusive_max = false;
+}
+
+// Items — repeated field constraints.
+annotation Items for field {
+    uint32? min;
+    uint32? max;
+    bool unique = false;
+}
+
+// NotEmpty — string/bytes/repeated must be non-empty.
+annotation NotEmpty for field {
+}

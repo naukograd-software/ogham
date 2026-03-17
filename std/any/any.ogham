@@ -1,0 +1,22 @@
+package any;
+
+// Any — wraps an arbitrary serialized message alongside a type URL
+// that identifies the message type.
+// Compatible with google.protobuf.Any.
+//
+// Usage:
+//   import github.com/oghamlang/std/any;
+//
+//   type Event {
+//       string event_type = 1;
+//       any.Any payload = 2;    // any serialized message
+//   }
+//
+// The type_url uniquely identifies the serialized type:
+//   "type.googleapis.com/example.User" or "ogham://example.User"
+type Any {
+    // URL that identifies the type of the serialized value.
+    string type_url = 1;
+    // Serialized message bytes.
+    bytes value = 2;
+}
