@@ -5,34 +5,52 @@ annotation Required for field {
 }
 
 // Length — string or bytes length constraints.
-annotation Length for field {
+annotation Length for field(string | bytes) {
     uint32? min;
     uint32? max;
     uint32? exact;
 }
 
 // Pattern — string must match a regular expression.
-annotation Pattern for field {
+annotation Pattern for field(string) {
     string pattern;
 }
 
-// Range — numeric value constraints.
-annotation Range for field {
+// Range — numeric value constraints (integer overload).
+annotation Range for field(int | int32 | int64 | i8 | int16 | uint | uint32 | uint64 | uint8 | uint16 | byte) {
     int64? min;
     int64? max;
-    double? min_float;
-    double? max_float;
     bool exclusive_min = false;
     bool exclusive_max = false;
 }
 
-// Items — repeated field constraints.
-annotation Items for field {
+// Range — numeric value constraints (floating-point overload).
+annotation Range for field(float | double) {
+    double? min;
+    double? max;
+    bool exclusive_min = false;
+    bool exclusive_max = false;
+}
+
+// Items — repeated field constraints with optional element validation.
+annotation Items for field([]any) {
     uint32? min;
     uint32? max;
     bool unique = false;
 }
 
-// NotEmpty — string/bytes/repeated must be non-empty.
-annotation NotEmpty for field {
+// Entries — map field constraints.
+annotation Entries for field(map<any, any>) {
+    uint32? min;
+    uint32? max;
+}
+
+// NotEmpty — string/bytes/repeated/map must be non-empty.
+annotation NotEmpty for field(string | bytes) {
+}
+
+annotation NotEmpty for field([]any) {
+}
+
+annotation NotEmpty for field(map<any, any>) {
 }

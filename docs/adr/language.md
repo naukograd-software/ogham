@@ -46,6 +46,24 @@ import <path> as <alias>;
 | `T?` | Optional |
 | `map<K, V>` | Map (K must be a proto-compatible key type: `bool`, `string`, `int32`, `int64`, `uint32`, `uint64` or their aliases) |
 
+**Nesting restriction**: container types must be flat — `T` in `[]T` and `V` in `map<K, V>` must be a scalar or message type, not another container. The following are compile errors:
+
+```
+[][]string           // ✗ nested array
+[]map<string, int>   // ✗ array of maps
+map<string, []int>   // ✗ map with array value
+map<string, map<..>> // ✗ nested maps
+```
+
+Extract inner containers to a separate type instead:
+
+```
+type Row { []int32 values = 1; }
+type Matrix { []Row rows = 1; }  // ✓
+```
+
+This restriction ensures 1:1 mapping to protobuf wire format (proto does not support nested containers either).
+
 ## Type
 
 A structure with numbered fields. Supports wire compatibility through explicit field numbers.
@@ -146,8 +164,6 @@ enum Name {
 ```
 
 `Unspecified = 0` is added implicitly.
-
-**Removing values**: `@removed(fallback=<non-removed-value>)`. The fallback must reference a non-removed value. Fallback chains are not allowed.
 
 ## Oneof
 
@@ -580,7 +596,7 @@ type UserDashboard {
 An annotation is defined in a library with explicit targets and a parameter schema.
 
 ```
-annotation Name for <target1>|<target2> {
+annotation Name for <target> {
     <type> <param_name>;
     <type>? <param_name> = <default>;
 }
@@ -589,6 +605,106 @@ annotation Name for <target1>|<target2> {
 **Targets**: `shape`, `type`, `field`, `oneof`, `oneof_field`, `enum`, `enum_value`, `service`, `rpc`.
 
 A field is optional if it has `?` or a default value.
+
+### Type constraints (overloading)
+
+Annotations can be constrained to specific field types using `for field(<type_constraint>)`. Multiple definitions with the same name but different constraints are allowed — the compiler resolves the correct overload based on the field type.
+
+```
+// Integer overload
+annotation Range for field(int | int32 | int64 | uint | uint32 | uint64) {
+    int64? min;
+    int64? max;
+}
+
+// Float overload
+annotation Range for field(float | double) {
+    double? min;
+    double? max;
+}
+```
+
+**Type constraint syntax:**
+
+| Constraint | Matches |
+|------------|---------|
+| `field` or `field(any)` | Any field type |
+| `field(string)` | String fields |
+| `field(int32 \| int64)` | Union — any of the listed types |
+| `field(message)` | Any message/struct field |
+| `field(enum)` | Any enum field |
+| `field(time.Timestamp)` | Specific named type |
+| `field([]any)` | Any repeated field |
+| `field([]string)` | Repeated string field |
+| `field(map<any, any>)` | Any map field |
+| `field(map<string, any>)` | Map with string keys |
+
+**Overload resolution rules:**
+
+1. The compiler collects all annotation definitions matching `(library, name)`
+2. For each, checks if the field type matches the type constraint
+3. Picks the most specific match (exact scalar > named type > category > union > wildcard)
+4. If no overload matches — compile error
+5. If multiple overloads match with equal specificity — compile error (ambiguous)
+
+**Implicit element matching**: when an annotation targets a scalar type but is applied to a container field, the compiler automatically matches against the element type:
+
+```
+@validate::Items(min=1, max=10)      // matches for field([]any) → validates container
+@validate::Length(max=50)            // matches for field(string) via element type → validates each element
+[]string tags = 1;
+```
+
+The compiler knows `Length` targets `field(string)`, the field type is `[]string`, so it resolves through the element type `string`. This works for both `[]T` (element) and `map<K, V>` (value).
+
+The LSP leverages this for:
+- **Completion**: on a `[]string` field, shows both container annotations (`Items`, `NotEmpty`) and element annotations (`Length`, `Pattern`)
+- **Hover**: shows `"validate::Length for field(string) — applied to each element of []string"`
+- **Diagnostics**: `@validate::Range(min=1)` on `[]string` → error: no overload for `string`
+- **Hints**: suggests element-level annotations when a container field has no element validation
+
+### Call
+
+```
+@<library>::<AnnotationName>(<param>=<value>, ...)
+```
+
+### Default values (`std/default`)
+
+Default field values are defined via the `default` standard library package — not a built-in keyword. The `Default` annotation is overloaded by field type:
+
+```
+import github.com/oghamlang/std/default;
+
+shape Timestamps {
+    @default::Default(now)       // now is an enum value (TimestampPreset.now)
+    time.Timestamp created_at;
+    @default::Default(now)
+    time.Timestamp updated_at;
+}
+
+type Config {
+    @default::Default("en")
+    string locale = 1;
+    @default::Default(true)
+    bool active = 2;
+    @default::Default(0)
+    int32 retry_count = 3;
+}
+```
+
+The `now` value for timestamps is an enum `TimestampPreset` defined inside `std/default` — not a language keyword.
+
+### Reserved field numbers
+
+`reserved` is a dedicated language construct (not an annotation). It declares field numbers that must not be reused:
+
+```
+type User {
+    string email = 1;
+    reserved 2, 3;        // proto: reserved 2, 3;
+}
+```
 
 ### Composition
 
@@ -608,54 +724,10 @@ annotation RequiredEmail for field {
 
 `@mylib::RequiredEmail` on a field expands to `@validate::Required` + `@validate::Pattern(...)` + `@validate::Length(...)`.
 
-Composition is a general mechanism — not limited to validation. Any annotation can include others:
-
-```
-annotation AuditedTable for type {
-    string table_name;
-
-    database::Table(table_name=self.table_name);
-    database::CreatedAt(column="created_at");
-    database::UpdatedAt(column="updated_at");
-}
-
-// one annotation instead of three
-@mylib::AuditedTable(table_name="users")
-type User { ... }
-```
-
-Composite annotations can reference their own parameters via `self`:
-
-```
-annotation StringId for field {
-    int32 length = 20;
-
-    validate::Required;
-    validate::Length(exact=self.length);
-}
-```
-
 Rules:
 - Composition targets must be compatible — `Email for field` can only include annotations that also target `field`.
 - Circular composition is forbidden.
 - Conflicting constraints from composition (e.g., two `@validate::Length` with different `max`) is a compile error.
-
-See [validation.md](validation.md) for the full validation system.
-
-### Call
-
-```
-@<library>::<AnnotationName>(<param>=<value>, ...)
-```
-
-### Built-in Annotations
-
-| Annotation | Description | Proto mapping |
-|------------|-------------|---------------|
-| `@default(<value>)` | Default value. Magic keywords: `now`, `(u)int*.<min,max>` | Custom option `ogham.default` |
-| `@cast(<type>)` | Safe type cast | Custom option `ogham.cast` |
-| `@removed(fallback=<value>)` | Mark enum value as logically removed | Custom options `ogham.removed` + `ogham.fallback` (the value remains in proto enum, because proto enums do not remove values) |
-| `@reserved(<number>)` | Reserve a field number | `reserved <number>;` |
 
 ### Proto Target Mapping
 
@@ -705,7 +777,7 @@ Ogham is fully protobuf-compatible: any `.ogham` schema can be compiled into a v
 | `type` | `message` |
 | `type Alias = T` | Expanded into the target type |
 | `type Generic<T>` | Monomorphization into concrete `message` types |
-| `enum` | `enum` (all values preserved, `@removed` becomes an option) |
+| `enum` | `enum` |
 | `shape` | Expanded into `message` fields |
 | `Pick<T, ...>` / `Omit<T, ...>` | New `message` with a field subset |
 | `type` with `<-` (projection) | New `message` with mapping metadata in `OghamAnnotation` |

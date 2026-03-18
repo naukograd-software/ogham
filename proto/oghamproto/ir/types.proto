@@ -6,6 +6,17 @@ import "oghamproto/common/source.proto";
 
 option go_package = "github.com/oghamlang/go/oghamproto/ir";
 
+// ── Module info ────────────────────────────────────────────────────────
+
+// Origin module of a type/enum/service.
+// Carried inline on each declaration for direct access without lookups.
+message ModuleInfo {
+    string module_path = 1;   // "github.com/org/billing" from ogham.mod.yaml
+    string package = 2;       // "billing" — ogham package name
+    string version = 3;       // "1.0.0"
+    bool generate = 4;        // true = own module, false = dependency
+}
+
 // ── Top-level IR container ─────────────────────────────────────────────
 
 // Fully resolved module — the output of the compiler's AST → IR lowering.
@@ -30,6 +41,7 @@ message Type {
     repeated TypeBackRef back_references = 8; // types that reference this type
     TypeTrace trace = 9;                     // origin trace
     common.SourceLocation location = 10;
+    ModuleInfo module = 16;                  // origin module of this type
 }
 
 message Field {
@@ -68,6 +80,7 @@ message Enum {
     repeated EnumValue values = 3;          // includes implicit Unspecified=0
     repeated AnnotationCall annotations = 4;
     common.SourceLocation location = 5;
+    ModuleInfo module = 6;                   // origin module of this enum
 }
 
 message EnumValue {
@@ -87,6 +100,7 @@ message Service {
     repeated Rpc rpcs = 3;
     repeated AnnotationCall annotations = 4;
     common.SourceLocation location = 5;
+    ModuleInfo module = 6;                   // origin module of this service
 }
 
 message Rpc {

@@ -32,8 +32,8 @@ These changes break wire format. Existing clients will fail to deserialize.
 
 - Changing a field number
 - Changing a field's wire type (e.g., `int32` → `string`, `message` → `enum`)
-- Removing a field without `@reserved` on its field number
-- Removing an enum value without `@removed(fallback=...)`
+- Removing a field without `reserved` on its field number
+- Removing an enum value
 - Changing a field between singular and repeated (`T` ↔ `[]T`)
 - Changing or removing the input/output type of an rpc
 - Adding or removing `stream` modifier on an rpc
@@ -157,7 +157,7 @@ Comparison is done by **fully qualified type name**. A type renamed at the Ogham
 | Construct | Checked | How |
 |-----------|---------|-----|
 | Type fields | Yes | Field number, wire type, name, repeated/optional |
-| Enum values | Yes | Value number, name, removed status |
+| Enum values | Yes | Value number, name |
 | Service rpcs | Yes | Method name, input type, output type, stream modifiers |
 | Annotations | No | Annotations are metadata, not wire format |
 | `<-` mappings | No | Compile-time metadata, not wire format |
@@ -172,7 +172,7 @@ Ogham follows proto3 compatibility semantics. A message encoded with schema v1 c
 ### Backward compatibility (new code reads old data)
 
 - New fields not present in old data get their **zero value** (`0`, `""`, `false`, `nil`).
-- Removed fields (with `@reserved`) are ignored — their field numbers are never reused.
+- Removed fields (with `reserved`) are ignored — their field numbers are never reused.
 - New enum values are never encountered in old data.
 
 ### Forward compatibility (old code reads new data)
@@ -182,17 +182,9 @@ Ogham follows proto3 compatibility semantics. A message encoded with schema v1 c
 - New oneof variants not recognized by old code result in an empty oneof (no variant set).
 - New rpcs in a service are ignored by old clients — they simply never call them.
 
-### `@removed` enum values
+### `reserved` fields
 
-When an enum value is marked `@removed(fallback=X)`:
-- The value **stays in the proto enum** (proto enums never delete values).
-- Old data containing the removed value is deserialized normally.
-- New code receiving the removed value should treat it as the fallback value `X`.
-- The compiler enforces that the fallback value is not itself removed (no fallback chains).
-
-### `@reserved` fields
-
-When a field number is reserved with `@reserved(N)`:
+When a field number is reserved with `reserved N;`:
 - The number `N` is added to the proto `reserved` list.
 - No new field can reuse number `N`.
 - Old data containing field `N` is silently ignored during deserialization.
@@ -203,8 +195,8 @@ Ogham does not prescribe a versioning strategy, but recommends:
 
 1. **Use semver for published schemas.** Major version bump for ERROR-level changes, minor for WARNING-level, patch for INFO-level.
 2. **Run `ogham breaking` in CI.** Compare against the latest published version or the main branch.
-3. **Never reuse field numbers.** Use `@reserved` when removing fields.
-4. **Never delete enum values.** Use `@removed(fallback=...)` instead.
+3. **Never reuse field numbers.** Use `reserved` when removing fields.
+4. **Never delete enum values.**
 5. **Add fields with new numbers at the end.** Don't insert into gaps in the numbering.
 
 ## Proto Type Mapping Reference

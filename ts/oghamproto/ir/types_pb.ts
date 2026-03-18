@@ -12,7 +12,88 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file oghamproto/ir/types.proto.
  */
 export const file_oghamproto_ir_types: GenFile = /*@__PURE__*/
-  fileDesc("ChlvZ2hhbXByb3RvL2lyL3R5cGVzLnByb3RvEg1vZ2hhbXByb3RvLmlyIosBCgZNb2R1bGUSDwoHcGFja2FnZRgBIAEoCRIiCgV0eXBlcxgCIAMoCzITLm9naGFtcHJvdG8uaXIuVHlwZRIiCgVlbnVtcxgDIAMoCzITLm9naGFtcHJvdG8uaXIuRW51bRIoCghzZXJ2aWNlcxgEIAMoCzIWLm9naGFtcHJvdG8uaXIuU2VydmljZSKVAwoEVHlwZRIMCgRuYW1lGAEgASgJEhEKCWZ1bGxfbmFtZRgCIAEoCRIkCgZmaWVsZHMYAyADKAsyFC5vZ2hhbXByb3RvLmlyLkZpZWxkEikKBm9uZW9mcxgEIAMoCzIZLm9naGFtcHJvdG8uaXIuT25lb2ZHcm91cBIpCgxuZXN0ZWRfdHlwZXMYBSADKAsyEy5vZ2hhbXByb3RvLmlyLlR5cGUSKQoMbmVzdGVkX2VudW1zGAYgAygLMhMub2doYW1wcm90by5pci5FbnVtEjIKC2Fubm90YXRpb25zGAcgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbBIzCg9iYWNrX3JlZmVyZW5jZXMYCCADKAsyGi5vZ2hhbXByb3RvLmlyLlR5cGVCYWNrUmVmEicKBXRyYWNlGAkgASgLMhgub2doYW1wcm90by5pci5UeXBlVHJhY2USMwoIbG9jYXRpb24YCiABKAsyIS5vZ2hhbXByb3RvLmNvbW1vbi5Tb3VyY2VMb2NhdGlvbiK8AgoFRmllbGQSDAoEbmFtZRgBIAEoCRIOCgZudW1iZXIYAiABKA0SKgoEdHlwZRgDIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZRITCgtpc19vcHRpb25hbBgEIAEoCBITCgtpc19yZXBlYXRlZBgFIAEoCBIyCgthbm5vdGF0aW9ucxgGIAMoCzIdLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkNhbGwSLAoHbWFwcGluZxgHIAEoCzIbLm9naGFtcHJvdG8uaXIuRmllbGRNYXBwaW5nEigKBXRyYWNlGAggASgLMhkub2doYW1wcm90by5pci5GaWVsZFRyYWNlEjMKCGxvY2F0aW9uGAkgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24irgEKCk9uZW9mR3JvdXASDAoEbmFtZRgBIAEoCRIpCgZmaWVsZHMYAiADKAsyGS5vZ2hhbXByb3RvLmlyLk9uZW9mRmllbGQSMgoLYW5ub3RhdGlvbnMYAyADKAsyHS5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25DYWxsEjMKCGxvY2F0aW9uGAQgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24i7QEKCk9uZW9mRmllbGQSDAoEbmFtZRgBIAEoCRIOCgZudW1iZXIYAiABKA0SKgoEdHlwZRgDIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZRIyCgthbm5vdGF0aW9ucxgEIAMoCzIdLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkNhbGwSLAoHbWFwcGluZxgFIAEoCzIbLm9naGFtcHJvdG8uaXIuRmllbGRNYXBwaW5nEjMKCGxvY2F0aW9uGAYgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iugEKBEVudW0SDAoEbmFtZRgBIAEoCRIRCglmdWxsX25hbWUYAiABKAkSKAoGdmFsdWVzGAMgAygLMhgub2doYW1wcm90by5pci5FbnVtVmFsdWUSMgoLYW5ub3RhdGlvbnMYBCADKAsyHS5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25DYWxsEjMKCGxvY2F0aW9uGAUgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iuAEKCUVudW1WYWx1ZRIMCgRuYW1lGAEgASgJEg4KBm51bWJlchgCIAEoBRISCgppc19yZW1vdmVkGAMgASgIEhAKCGZhbGxiYWNrGAQgASgJEjIKC2Fubm90YXRpb25zGAUgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbBIzCghsb2NhdGlvbhgGIAEoCzIhLm9naGFtcHJvdG8uY29tbW9uLlNvdXJjZUxvY2F0aW9uIrUBCgdTZXJ2aWNlEgwKBG5hbWUYASABKAkSEQoJZnVsbF9uYW1lGAIgASgJEiAKBHJwY3MYAyADKAsyEi5vZ2hhbXByb3RvLmlyLlJwYxIyCgthbm5vdGF0aW9ucxgEIAMoCzIdLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkNhbGwSMwoIbG9jYXRpb24YBSABKAsyIS5vZ2hhbXByb3RvLmNvbW1vbi5Tb3VyY2VMb2NhdGlvbiLNAQoDUnBjEgwKBG5hbWUYASABKAkSJgoFaW5wdXQYAiABKAsyFy5vZ2hhbXByb3RvLmlyLlJwY1BhcmFtEicKBm91dHB1dBgDIAEoCzIXLm9naGFtcHJvdG8uaXIuUnBjUGFyYW0SMgoLYW5ub3RhdGlvbnMYBCADKAsyHS5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25DYWxsEjMKCGxvY2F0aW9uGAUgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iWgoIUnBjUGFyYW0SDwoHaXNfdm9pZBgBIAEoCBIRCglpc19zdHJlYW0YAiABKAgSKgoEdHlwZRgDIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZSLNAQoNVHlwZVJlZmVyZW5jZRIrCgZzY2FsYXIYASABKAsyGS5vZ2hhbXByb3RvLmlyLlNjYWxhclR5cGVIABIyCgxtZXNzYWdlX3R5cGUYAiABKAsyGi5vZ2hhbXByb3RvLmlyLk1lc3NhZ2VUeXBlSAASLAoJZW51bV90eXBlGAMgASgLMhcub2doYW1wcm90by5pci5FbnVtVHlwZUgAEiUKA21hcBgEIAEoCzIWLm9naGFtcHJvdG8uaXIuTWFwVHlwZUgAQgYKBGtpbmQiPAoKU2NhbGFyVHlwZRIuCgtzY2FsYXJfa2luZBgBIAEoDjIZLm9naGFtcHJvdG8uaXIuU2NhbGFyS2luZCLeAQoLTWVzc2FnZVR5cGUSDAoEbmFtZRgBIAEoCRIRCglmdWxsX25hbWUYAiABKAkSJAoGZmllbGRzGAMgAygLMhQub2doYW1wcm90by5pci5GaWVsZBIpCgZvbmVvZnMYBCADKAsyGS5vZ2hhbXByb3RvLmlyLk9uZW9mR3JvdXASKQoMbmVzdGVkX2VudW1zGAUgAygLMhMub2doYW1wcm90by5pci5FbnVtEjIKC2Fubm90YXRpb25zGAYgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbCJVCghFbnVtVHlwZRIMCgRuYW1lGAEgASgJEhEKCWZ1bGxfbmFtZRgCIAEoCRIoCgZ2YWx1ZXMYAyADKAsyGC5vZ2hhbXByb3RvLmlyLkVudW1WYWx1ZSJhCgdNYXBUeXBlEikKA2tleRgBIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZRIrCgV2YWx1ZRgCIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZSLTAQoOQW5ub3RhdGlvbkNhbGwSDwoHbGlicmFyeRgBIAEoCRIMCgRuYW1lGAIgASgJEjQKCWFyZ3VtZW50cxgDIAMoCzIhLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkFyZ3VtZW50EjcKCmRlZmluaXRpb24YBCABKAsyIy5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25EZWZpbml0aW9uEjMKCGxvY2F0aW9uGAUgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iUwoSQW5ub3RhdGlvbkFyZ3VtZW50EgwKBG5hbWUYASABKAkSLwoFdmFsdWUYAiABKAsyIC5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25MaXRlcmFsIuQBChFBbm5vdGF0aW9uTGl0ZXJhbBIWCgxzdHJpbmdfdmFsdWUYASABKAlIABITCglpbnRfdmFsdWUYAiABKANIABIVCgtmbG9hdF92YWx1ZRgDIAEoAUgAEhQKCmJvb2xfdmFsdWUYBCABKAhIABI3CgxzdHJ1Y3RfdmFsdWUYBSABKAsyHy5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25TdHJ1Y3RIABIzCgpsaXN0X3ZhbHVlGAYgASgLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uTGlzdEgAQgcKBXZhbHVlIqABChBBbm5vdGF0aW9uU3RydWN0EjsKBmZpZWxkcxgBIAMoCzIrLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvblN0cnVjdC5GaWVsZHNFbnRyeRpPCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSLwoFdmFsdWUYAiABKAsyIC5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25MaXRlcmFsOgI4ASJCCg5Bbm5vdGF0aW9uTGlzdBIwCgZ2YWx1ZXMYASADKAsyIC5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25MaXRlcmFsIr0BChRBbm5vdGF0aW9uRGVmaW5pdGlvbhIPCgdsaWJyYXJ5GAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdGFyZ2V0cxgDIAMoCRI2CgpwYXJhbWV0ZXJzGAQgAygLMiIub2doYW1wcm90by5pci5Bbm5vdGF0aW9uUGFyYW1ldGVyEj0KDGNvbXBvc2l0aW9ucxgFIAMoCzInLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkNvbXBvc2l0aW9uUmVmIp0BChNBbm5vdGF0aW9uUGFyYW1ldGVyEgwKBG5hbWUYASABKAkSKgoEdHlwZRgCIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZRITCgtpc19vcHRpb25hbBgDIAEoCBI3Cg1kZWZhdWx0X3ZhbHVlGAQgASgLMiAub2doYW1wcm90by5pci5Bbm5vdGF0aW9uTGl0ZXJhbCJvChhBbm5vdGF0aW9uQ29tcG9zaXRpb25SZWYSDwoHbGlicmFyeRgBIAEoCRIMCgRuYW1lGAIgASgJEjQKCWFyZ3VtZW50cxgDIAMoCzIhLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkFyZ3VtZW50IjkKDEZpZWxkTWFwcGluZxIpCgVjaGFpbhgBIAMoCzIaLm9naGFtcHJvdG8uaXIuTWFwcGluZ0xpbmsi6QEKC01hcHBpbmdMaW5rEhgKEHNvdXJjZV90eXBlX25hbWUYASABKAkSHQoVc291cmNlX3R5cGVfZnVsbF9uYW1lGAIgASgJEhkKEXNvdXJjZV9maWVsZF9uYW1lGAMgASgJEgwKBHBhdGgYBCADKAkSNwoRc291cmNlX2ZpZWxkX3R5cGUYBSABKAsyHC5vZ2hhbXByb3RvLmlyLlR5cGVSZWZlcmVuY2USPwoYc291cmNlX2ZpZWxkX2Fubm90YXRpb25zGAYgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbCJ6CglUeXBlVHJhY2USLwoHZ2VuZXJpYxgBIAEoCzIcLm9naGFtcHJvdG8uaXIuR2VuZXJpY09yaWdpbkgAEjIKCXBpY2tfb21pdBgCIAEoCzIdLm9naGFtcHJvdG8uaXIuUGlja09taXRPcmlnaW5IAEIICgZvcmlnaW4iPAoNR2VuZXJpY09yaWdpbhITCgtzb3VyY2VfbmFtZRgBIAEoCRIWCg50eXBlX2FyZ3VtZW50cxgCIAMoCSJNCg5QaWNrT21pdE9yaWdpbhIMCgRraW5kGAEgASgJEhgKEHNvdXJjZV90eXBlX25hbWUYAiABKAkSEwoLZmllbGRfbmFtZXMYAyADKAkiNwoKRmllbGRUcmFjZRIpCgVzaGFwZRgBIAEoCzIaLm9naGFtcHJvdG8uaXIuU2hhcGVPcmlnaW4isQEKC1NoYXBlT3JpZ2luEhIKCnNoYXBlX25hbWUYASABKAkSFwoPc2hhcGVfZnVsbF9uYW1lGAIgASgJEh0KFWluamVjdGlvbl9yYW5nZV9zdGFydBgDIAEoDRIbChNpbmplY3Rpb25fcmFuZ2VfZW5kGAQgASgNEjkKDnNoYXBlX2xvY2F0aW9uGAUgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iZAoLVHlwZUJhY2tSZWYSHQoVcmVmZXJlbmNpbmdfdHlwZV9uYW1lGAEgASgJEiIKGnJlZmVyZW5jaW5nX3R5cGVfZnVsbF9uYW1lGAIgASgJEhIKCmZpZWxkX25hbWUYAyABKAkqtAEKClNjYWxhcktpbmQSFAoQU0NBTEFSX0tJTkRfTk9ORRAAEggKBEJPT0wQARIKCgZTVFJJTkcQAhIJCgVCWVRFUxADEggKBElOVDgQBBIJCgVJTlQxNhAFEgkKBUlOVDMyEAYSCQoFSU5UNjQQBxIJCgVVSU5UOBAIEgoKBlVJTlQxNhAJEgoKBlVJTlQzMhAKEgoKBlVJTlQ2NBALEgkKBUZMT0FUEAwSCgoGRE9VQkxFEA1CJ1olZ2l0aHViLmNvbS9vZ2hhbWxhbmcvZ28vb2doYW1wcm90by9pcmIGcHJvdG8z", [file_oghamproto_common_source]);
+  fileDesc("ChlvZ2hhbXByb3RvL2lyL3R5cGVzLnByb3RvEg1vZ2hhbXByb3RvLmlyIlUKCk1vZHVsZUluZm8SEwoLbW9kdWxlX3BhdGgYASABKAkSDwoHcGFja2FnZRgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEhAKCGdlbmVyYXRlGAQgASgIIosBCgZNb2R1bGUSDwoHcGFja2FnZRgBIAEoCRIiCgV0eXBlcxgCIAMoCzITLm9naGFtcHJvdG8uaXIuVHlwZRIiCgVlbnVtcxgDIAMoCzITLm9naGFtcHJvdG8uaXIuRW51bRIoCghzZXJ2aWNlcxgEIAMoCzIWLm9naGFtcHJvdG8uaXIuU2VydmljZSLAAwoEVHlwZRIMCgRuYW1lGAEgASgJEhEKCWZ1bGxfbmFtZRgCIAEoCRIkCgZmaWVsZHMYAyADKAsyFC5vZ2hhbXByb3RvLmlyLkZpZWxkEikKBm9uZW9mcxgEIAMoCzIZLm9naGFtcHJvdG8uaXIuT25lb2ZHcm91cBIpCgxuZXN0ZWRfdHlwZXMYBSADKAsyEy5vZ2hhbXByb3RvLmlyLlR5cGUSKQoMbmVzdGVkX2VudW1zGAYgAygLMhMub2doYW1wcm90by5pci5FbnVtEjIKC2Fubm90YXRpb25zGAcgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbBIzCg9iYWNrX3JlZmVyZW5jZXMYCCADKAsyGi5vZ2hhbXByb3RvLmlyLlR5cGVCYWNrUmVmEicKBXRyYWNlGAkgASgLMhgub2doYW1wcm90by5pci5UeXBlVHJhY2USMwoIbG9jYXRpb24YCiABKAsyIS5vZ2hhbXByb3RvLmNvbW1vbi5Tb3VyY2VMb2NhdGlvbhIpCgZtb2R1bGUYECABKAsyGS5vZ2hhbXByb3RvLmlyLk1vZHVsZUluZm8ivAIKBUZpZWxkEgwKBG5hbWUYASABKAkSDgoGbnVtYmVyGAIgASgNEioKBHR5cGUYAyABKAsyHC5vZ2hhbXByb3RvLmlyLlR5cGVSZWZlcmVuY2USEwoLaXNfb3B0aW9uYWwYBCABKAgSEwoLaXNfcmVwZWF0ZWQYBSABKAgSMgoLYW5ub3RhdGlvbnMYBiADKAsyHS5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25DYWxsEiwKB21hcHBpbmcYByABKAsyGy5vZ2hhbXByb3RvLmlyLkZpZWxkTWFwcGluZxIoCgV0cmFjZRgIIAEoCzIZLm9naGFtcHJvdG8uaXIuRmllbGRUcmFjZRIzCghsb2NhdGlvbhgJIAEoCzIhLm9naGFtcHJvdG8uY29tbW9uLlNvdXJjZUxvY2F0aW9uIq4BCgpPbmVvZkdyb3VwEgwKBG5hbWUYASABKAkSKQoGZmllbGRzGAIgAygLMhkub2doYW1wcm90by5pci5PbmVvZkZpZWxkEjIKC2Fubm90YXRpb25zGAMgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbBIzCghsb2NhdGlvbhgEIAEoCzIhLm9naGFtcHJvdG8uY29tbW9uLlNvdXJjZUxvY2F0aW9uIu0BCgpPbmVvZkZpZWxkEgwKBG5hbWUYASABKAkSDgoGbnVtYmVyGAIgASgNEioKBHR5cGUYAyABKAsyHC5vZ2hhbXByb3RvLmlyLlR5cGVSZWZlcmVuY2USMgoLYW5ub3RhdGlvbnMYBCADKAsyHS5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25DYWxsEiwKB21hcHBpbmcYBSABKAsyGy5vZ2hhbXByb3RvLmlyLkZpZWxkTWFwcGluZxIzCghsb2NhdGlvbhgGIAEoCzIhLm9naGFtcHJvdG8uY29tbW9uLlNvdXJjZUxvY2F0aW9uIuUBCgRFbnVtEgwKBG5hbWUYASABKAkSEQoJZnVsbF9uYW1lGAIgASgJEigKBnZhbHVlcxgDIAMoCzIYLm9naGFtcHJvdG8uaXIuRW51bVZhbHVlEjIKC2Fubm90YXRpb25zGAQgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbBIzCghsb2NhdGlvbhgFIAEoCzIhLm9naGFtcHJvdG8uY29tbW9uLlNvdXJjZUxvY2F0aW9uEikKBm1vZHVsZRgGIAEoCzIZLm9naGFtcHJvdG8uaXIuTW9kdWxlSW5mbyK4AQoJRW51bVZhbHVlEgwKBG5hbWUYASABKAkSDgoGbnVtYmVyGAIgASgFEhIKCmlzX3JlbW92ZWQYAyABKAgSEAoIZmFsbGJhY2sYBCABKAkSMgoLYW5ub3RhdGlvbnMYBSADKAsyHS5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25DYWxsEjMKCGxvY2F0aW9uGAYgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24i4AEKB1NlcnZpY2USDAoEbmFtZRgBIAEoCRIRCglmdWxsX25hbWUYAiABKAkSIAoEcnBjcxgDIAMoCzISLm9naGFtcHJvdG8uaXIuUnBjEjIKC2Fubm90YXRpb25zGAQgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbBIzCghsb2NhdGlvbhgFIAEoCzIhLm9naGFtcHJvdG8uY29tbW9uLlNvdXJjZUxvY2F0aW9uEikKBm1vZHVsZRgGIAEoCzIZLm9naGFtcHJvdG8uaXIuTW9kdWxlSW5mbyLNAQoDUnBjEgwKBG5hbWUYASABKAkSJgoFaW5wdXQYAiABKAsyFy5vZ2hhbXByb3RvLmlyLlJwY1BhcmFtEicKBm91dHB1dBgDIAEoCzIXLm9naGFtcHJvdG8uaXIuUnBjUGFyYW0SMgoLYW5ub3RhdGlvbnMYBCADKAsyHS5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25DYWxsEjMKCGxvY2F0aW9uGAUgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iWgoIUnBjUGFyYW0SDwoHaXNfdm9pZBgBIAEoCBIRCglpc19zdHJlYW0YAiABKAgSKgoEdHlwZRgDIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZSLNAQoNVHlwZVJlZmVyZW5jZRIrCgZzY2FsYXIYASABKAsyGS5vZ2hhbXByb3RvLmlyLlNjYWxhclR5cGVIABIyCgxtZXNzYWdlX3R5cGUYAiABKAsyGi5vZ2hhbXByb3RvLmlyLk1lc3NhZ2VUeXBlSAASLAoJZW51bV90eXBlGAMgASgLMhcub2doYW1wcm90by5pci5FbnVtVHlwZUgAEiUKA21hcBgEIAEoCzIWLm9naGFtcHJvdG8uaXIuTWFwVHlwZUgAQgYKBGtpbmQiPAoKU2NhbGFyVHlwZRIuCgtzY2FsYXJfa2luZBgBIAEoDjIZLm9naGFtcHJvdG8uaXIuU2NhbGFyS2luZCLeAQoLTWVzc2FnZVR5cGUSDAoEbmFtZRgBIAEoCRIRCglmdWxsX25hbWUYAiABKAkSJAoGZmllbGRzGAMgAygLMhQub2doYW1wcm90by5pci5GaWVsZBIpCgZvbmVvZnMYBCADKAsyGS5vZ2hhbXByb3RvLmlyLk9uZW9mR3JvdXASKQoMbmVzdGVkX2VudW1zGAUgAygLMhMub2doYW1wcm90by5pci5FbnVtEjIKC2Fubm90YXRpb25zGAYgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbCJVCghFbnVtVHlwZRIMCgRuYW1lGAEgASgJEhEKCWZ1bGxfbmFtZRgCIAEoCRIoCgZ2YWx1ZXMYAyADKAsyGC5vZ2hhbXByb3RvLmlyLkVudW1WYWx1ZSJhCgdNYXBUeXBlEikKA2tleRgBIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZRIrCgV2YWx1ZRgCIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZSLTAQoOQW5ub3RhdGlvbkNhbGwSDwoHbGlicmFyeRgBIAEoCRIMCgRuYW1lGAIgASgJEjQKCWFyZ3VtZW50cxgDIAMoCzIhLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkFyZ3VtZW50EjcKCmRlZmluaXRpb24YBCABKAsyIy5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25EZWZpbml0aW9uEjMKCGxvY2F0aW9uGAUgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iUwoSQW5ub3RhdGlvbkFyZ3VtZW50EgwKBG5hbWUYASABKAkSLwoFdmFsdWUYAiABKAsyIC5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25MaXRlcmFsIuQBChFBbm5vdGF0aW9uTGl0ZXJhbBIWCgxzdHJpbmdfdmFsdWUYASABKAlIABITCglpbnRfdmFsdWUYAiABKANIABIVCgtmbG9hdF92YWx1ZRgDIAEoAUgAEhQKCmJvb2xfdmFsdWUYBCABKAhIABI3CgxzdHJ1Y3RfdmFsdWUYBSABKAsyHy5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25TdHJ1Y3RIABIzCgpsaXN0X3ZhbHVlGAYgASgLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uTGlzdEgAQgcKBXZhbHVlIqABChBBbm5vdGF0aW9uU3RydWN0EjsKBmZpZWxkcxgBIAMoCzIrLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvblN0cnVjdC5GaWVsZHNFbnRyeRpPCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSLwoFdmFsdWUYAiABKAsyIC5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25MaXRlcmFsOgI4ASJCCg5Bbm5vdGF0aW9uTGlzdBIwCgZ2YWx1ZXMYASADKAsyIC5vZ2hhbXByb3RvLmlyLkFubm90YXRpb25MaXRlcmFsIr0BChRBbm5vdGF0aW9uRGVmaW5pdGlvbhIPCgdsaWJyYXJ5GAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdGFyZ2V0cxgDIAMoCRI2CgpwYXJhbWV0ZXJzGAQgAygLMiIub2doYW1wcm90by5pci5Bbm5vdGF0aW9uUGFyYW1ldGVyEj0KDGNvbXBvc2l0aW9ucxgFIAMoCzInLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkNvbXBvc2l0aW9uUmVmIp0BChNBbm5vdGF0aW9uUGFyYW1ldGVyEgwKBG5hbWUYASABKAkSKgoEdHlwZRgCIAEoCzIcLm9naGFtcHJvdG8uaXIuVHlwZVJlZmVyZW5jZRITCgtpc19vcHRpb25hbBgDIAEoCBI3Cg1kZWZhdWx0X3ZhbHVlGAQgASgLMiAub2doYW1wcm90by5pci5Bbm5vdGF0aW9uTGl0ZXJhbCJvChhBbm5vdGF0aW9uQ29tcG9zaXRpb25SZWYSDwoHbGlicmFyeRgBIAEoCRIMCgRuYW1lGAIgASgJEjQKCWFyZ3VtZW50cxgDIAMoCzIhLm9naGFtcHJvdG8uaXIuQW5ub3RhdGlvbkFyZ3VtZW50IjkKDEZpZWxkTWFwcGluZxIpCgVjaGFpbhgBIAMoCzIaLm9naGFtcHJvdG8uaXIuTWFwcGluZ0xpbmsi6QEKC01hcHBpbmdMaW5rEhgKEHNvdXJjZV90eXBlX25hbWUYASABKAkSHQoVc291cmNlX3R5cGVfZnVsbF9uYW1lGAIgASgJEhkKEXNvdXJjZV9maWVsZF9uYW1lGAMgASgJEgwKBHBhdGgYBCADKAkSNwoRc291cmNlX2ZpZWxkX3R5cGUYBSABKAsyHC5vZ2hhbXByb3RvLmlyLlR5cGVSZWZlcmVuY2USPwoYc291cmNlX2ZpZWxkX2Fubm90YXRpb25zGAYgAygLMh0ub2doYW1wcm90by5pci5Bbm5vdGF0aW9uQ2FsbCJ6CglUeXBlVHJhY2USLwoHZ2VuZXJpYxgBIAEoCzIcLm9naGFtcHJvdG8uaXIuR2VuZXJpY09yaWdpbkgAEjIKCXBpY2tfb21pdBgCIAEoCzIdLm9naGFtcHJvdG8uaXIuUGlja09taXRPcmlnaW5IAEIICgZvcmlnaW4iPAoNR2VuZXJpY09yaWdpbhITCgtzb3VyY2VfbmFtZRgBIAEoCRIWCg50eXBlX2FyZ3VtZW50cxgCIAMoCSJNCg5QaWNrT21pdE9yaWdpbhIMCgRraW5kGAEgASgJEhgKEHNvdXJjZV90eXBlX25hbWUYAiABKAkSEwoLZmllbGRfbmFtZXMYAyADKAkiNwoKRmllbGRUcmFjZRIpCgVzaGFwZRgBIAEoCzIaLm9naGFtcHJvdG8uaXIuU2hhcGVPcmlnaW4isQEKC1NoYXBlT3JpZ2luEhIKCnNoYXBlX25hbWUYASABKAkSFwoPc2hhcGVfZnVsbF9uYW1lGAIgASgJEh0KFWluamVjdGlvbl9yYW5nZV9zdGFydBgDIAEoDRIbChNpbmplY3Rpb25fcmFuZ2VfZW5kGAQgASgNEjkKDnNoYXBlX2xvY2F0aW9uGAUgASgLMiEub2doYW1wcm90by5jb21tb24uU291cmNlTG9jYXRpb24iZAoLVHlwZUJhY2tSZWYSHQoVcmVmZXJlbmNpbmdfdHlwZV9uYW1lGAEgASgJEiIKGnJlZmVyZW5jaW5nX3R5cGVfZnVsbF9uYW1lGAIgASgJEhIKCmZpZWxkX25hbWUYAyABKAkqtAEKClNjYWxhcktpbmQSFAoQU0NBTEFSX0tJTkRfTk9ORRAAEggKBEJPT0wQARIKCgZTVFJJTkcQAhIJCgVCWVRFUxADEggKBElOVDgQBBIJCgVJTlQxNhAFEgkKBUlOVDMyEAYSCQoFSU5UNjQQBxIJCgVVSU5UOBAIEgoKBlVJTlQxNhAJEgoKBlVJTlQzMhAKEgoKBlVJTlQ2NBALEgkKBUZMT0FUEAwSCgoGRE9VQkxFEA1CJ1olZ2l0aHViLmNvbS9vZ2hhbWxhbmcvZ28vb2doYW1wcm90by9pcmIGcHJvdG8z", [file_oghamproto_common_source]);
+
+/**
+ * Origin module of a type/enum/service.
+ * Carried inline on each declaration for direct access without lookups.
+ *
+ * @generated from message oghamproto.ir.ModuleInfo
+ */
+export type ModuleInfo = Message<"oghamproto.ir.ModuleInfo"> & {
+  /**
+   * "github.com/org/billing" from ogham.mod.yaml
+   *
+   * @generated from field: string module_path = 1;
+   */
+  modulePath: string;
+
+  /**
+   * "billing" — ogham package name
+   *
+   * @generated from field: string package = 2;
+   */
+  package: string;
+
+  /**
+   * "1.0.0"
+   *
+   * @generated from field: string version = 3;
+   */
+  version: string;
+
+  /**
+   * true = own module, false = dependency
+   *
+   * @generated from field: bool generate = 4;
+   */
+  generate: boolean;
+};
+
+/**
+ * Origin module of a type/enum/service.
+ * Carried inline on each declaration for direct access without lookups.
+ *
+ * @generated from message oghamproto.ir.ModuleInfo
+ */
+export type ModuleInfoJson = {
+  /**
+   * "github.com/org/billing" from ogham.mod.yaml
+   *
+   * @generated from field: string module_path = 1;
+   */
+  modulePath?: string;
+
+  /**
+   * "billing" — ogham package name
+   *
+   * @generated from field: string package = 2;
+   */
+  package?: string;
+
+  /**
+   * "1.0.0"
+   *
+   * @generated from field: string version = 3;
+   */
+  version?: string;
+
+  /**
+   * true = own module, false = dependency
+   *
+   * @generated from field: bool generate = 4;
+   */
+  generate?: boolean;
+};
+
+export type ModuleInfoValid = ModuleInfo;
+
+/**
+ * Describes the message oghamproto.ir.ModuleInfo.
+ * Use `create(ModuleInfoSchema)` to create a new message.
+ */
+export const ModuleInfoSchema: GenMessage<ModuleInfo, {jsonType: ModuleInfoJson, validType: ModuleInfoValid}> = /*@__PURE__*/
+  messageDesc(file_oghamproto_ir_types, 0);
 
 /**
  * Fully resolved module — the output of the compiler's AST → IR lowering.
@@ -77,7 +158,7 @@ export type ModuleValid = Module;
  * Use `create(ModuleSchema)` to create a new message.
  */
 export const ModuleSchema: GenMessage<Module, {jsonType: ModuleJson, validType: ModuleValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 0);
+  messageDesc(file_oghamproto_ir_types, 1);
 
 /**
  * @generated from message oghamproto.ir.Type
@@ -138,6 +219,13 @@ export type Type = Message<"oghamproto.ir.Type"> & {
    * @generated from field: oghamproto.common.SourceLocation location = 10;
    */
   location?: SourceLocation;
+
+  /**
+   * origin module of this type
+   *
+   * @generated from field: oghamproto.ir.ModuleInfo module = 16;
+   */
+  module?: ModuleInfo;
 };
 
 /**
@@ -199,6 +287,13 @@ export type TypeJson = {
    * @generated from field: oghamproto.common.SourceLocation location = 10;
    */
   location?: SourceLocationJson;
+
+  /**
+   * origin module of this type
+   *
+   * @generated from field: oghamproto.ir.ModuleInfo module = 16;
+   */
+  module?: ModuleInfoJson;
 };
 
 export type TypeValid = Type;
@@ -208,7 +303,7 @@ export type TypeValid = Type;
  * Use `create(TypeSchema)` to create a new message.
  */
 export const TypeSchema: GenMessage<Type, {jsonType: TypeJson, validType: TypeValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 1);
+  messageDesc(file_oghamproto_ir_types, 2);
 
 /**
  * @generated from message oghamproto.ir.Field
@@ -329,7 +424,7 @@ export type FieldValid = Field;
  * Use `create(FieldSchema)` to create a new message.
  */
 export const FieldSchema: GenMessage<Field, {jsonType: FieldJson, validType: FieldValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 2);
+  messageDesc(file_oghamproto_ir_types, 3);
 
 /**
  * @generated from message oghamproto.ir.OneofGroup
@@ -388,7 +483,7 @@ export type OneofGroupValid = OneofGroup;
  * Use `create(OneofGroupSchema)` to create a new message.
  */
 export const OneofGroupSchema: GenMessage<OneofGroup, {jsonType: OneofGroupJson, validType: OneofGroupValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 3);
+  messageDesc(file_oghamproto_ir_types, 4);
 
 /**
  * @generated from message oghamproto.ir.OneofField
@@ -467,7 +562,7 @@ export type OneofFieldValid = OneofField;
  * Use `create(OneofFieldSchema)` to create a new message.
  */
 export const OneofFieldSchema: GenMessage<OneofField, {jsonType: OneofFieldJson, validType: OneofFieldValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 4);
+  messageDesc(file_oghamproto_ir_types, 5);
 
 /**
  * @generated from message oghamproto.ir.Enum
@@ -499,6 +594,13 @@ export type Enum = Message<"oghamproto.ir.Enum"> & {
    * @generated from field: oghamproto.common.SourceLocation location = 5;
    */
   location?: SourceLocation;
+
+  /**
+   * origin module of this enum
+   *
+   * @generated from field: oghamproto.ir.ModuleInfo module = 6;
+   */
+  module?: ModuleInfo;
 };
 
 /**
@@ -531,6 +633,13 @@ export type EnumJson = {
    * @generated from field: oghamproto.common.SourceLocation location = 5;
    */
   location?: SourceLocationJson;
+
+  /**
+   * origin module of this enum
+   *
+   * @generated from field: oghamproto.ir.ModuleInfo module = 6;
+   */
+  module?: ModuleInfoJson;
 };
 
 export type EnumValid = Enum;
@@ -540,7 +649,7 @@ export type EnumValid = Enum;
  * Use `create(EnumSchema)` to create a new message.
  */
 export const EnumSchema: GenMessage<Enum, {jsonType: EnumJson, validType: EnumValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 5);
+  messageDesc(file_oghamproto_ir_types, 6);
 
 /**
  * @generated from message oghamproto.ir.EnumValue
@@ -623,7 +732,7 @@ export type EnumValueValid = EnumValue;
  * Use `create(EnumValueSchema)` to create a new message.
  */
 export const EnumValueSchema: GenMessage<EnumValue, {jsonType: EnumValueJson, validType: EnumValueValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 6);
+  messageDesc(file_oghamproto_ir_types, 7);
 
 /**
  * @generated from message oghamproto.ir.Service
@@ -653,6 +762,13 @@ export type Service = Message<"oghamproto.ir.Service"> & {
    * @generated from field: oghamproto.common.SourceLocation location = 5;
    */
   location?: SourceLocation;
+
+  /**
+   * origin module of this service
+   *
+   * @generated from field: oghamproto.ir.ModuleInfo module = 6;
+   */
+  module?: ModuleInfo;
 };
 
 /**
@@ -683,6 +799,13 @@ export type ServiceJson = {
    * @generated from field: oghamproto.common.SourceLocation location = 5;
    */
   location?: SourceLocationJson;
+
+  /**
+   * origin module of this service
+   *
+   * @generated from field: oghamproto.ir.ModuleInfo module = 6;
+   */
+  module?: ModuleInfoJson;
 };
 
 export type ServiceValid = Service;
@@ -692,7 +815,7 @@ export type ServiceValid = Service;
  * Use `create(ServiceSchema)` to create a new message.
  */
 export const ServiceSchema: GenMessage<Service, {jsonType: ServiceJson, validType: ServiceValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 7);
+  messageDesc(file_oghamproto_ir_types, 8);
 
 /**
  * @generated from message oghamproto.ir.Rpc
@@ -761,7 +884,7 @@ export type RpcValid = Rpc;
  * Use `create(RpcSchema)` to create a new message.
  */
 export const RpcSchema: GenMessage<Rpc, {jsonType: RpcJson, validType: RpcValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 8);
+  messageDesc(file_oghamproto_ir_types, 9);
 
 /**
  * @generated from message oghamproto.ir.RpcParam
@@ -814,7 +937,7 @@ export type RpcParamValid = RpcParam;
  * Use `create(RpcParamSchema)` to create a new message.
  */
 export const RpcParamSchema: GenMessage<RpcParam, {jsonType: RpcParamJson, validType: RpcParamValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 9);
+  messageDesc(file_oghamproto_ir_types, 10);
 
 /**
  * @generated from message oghamproto.ir.TypeReference
@@ -890,7 +1013,7 @@ export type TypeReferenceValid = TypeReference;
  * Use `create(TypeReferenceSchema)` to create a new message.
  */
 export const TypeReferenceSchema: GenMessage<TypeReference, {jsonType: TypeReferenceJson, validType: TypeReferenceValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 10);
+  messageDesc(file_oghamproto_ir_types, 11);
 
 /**
  * Primitive/scalar type.
@@ -923,7 +1046,7 @@ export type ScalarTypeValid = ScalarType;
  * Use `create(ScalarTypeSchema)` to create a new message.
  */
 export const ScalarTypeSchema: GenMessage<ScalarType, {jsonType: ScalarTypeJson, validType: ScalarTypeValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 11);
+  messageDesc(file_oghamproto_ir_types, 12);
 
 /**
  * Reference to a message type — carries the full type inline.
@@ -1006,7 +1129,7 @@ export type MessageTypeValid = MessageType;
  * Use `create(MessageTypeSchema)` to create a new message.
  */
 export const MessageTypeSchema: GenMessage<MessageType, {jsonType: MessageTypeJson, validType: MessageTypeValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 12);
+  messageDesc(file_oghamproto_ir_types, 13);
 
 /**
  * Reference to an enum type — carries all values inline.
@@ -1059,7 +1182,7 @@ export type EnumTypeValid = EnumType;
  * Use `create(EnumTypeSchema)` to create a new message.
  */
 export const EnumTypeSchema: GenMessage<EnumType, {jsonType: EnumTypeJson, validType: EnumTypeValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 13);
+  messageDesc(file_oghamproto_ir_types, 14);
 
 /**
  * @generated from message oghamproto.ir.MapType
@@ -1098,7 +1221,7 @@ export type MapTypeValid = MapType;
  * Use `create(MapTypeSchema)` to create a new message.
  */
 export const MapTypeSchema: GenMessage<MapType, {jsonType: MapTypeJson, validType: MapTypeValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 14);
+  messageDesc(file_oghamproto_ir_types, 15);
 
 /**
  * @generated from message oghamproto.ir.AnnotationCall
@@ -1179,7 +1302,7 @@ export type AnnotationCallValid = AnnotationCall;
  * Use `create(AnnotationCallSchema)` to create a new message.
  */
 export const AnnotationCallSchema: GenMessage<AnnotationCall, {jsonType: AnnotationCallJson, validType: AnnotationCallValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 15);
+  messageDesc(file_oghamproto_ir_types, 16);
 
 /**
  * @generated from message oghamproto.ir.AnnotationArgument
@@ -1218,7 +1341,7 @@ export type AnnotationArgumentValid = AnnotationArgument;
  * Use `create(AnnotationArgumentSchema)` to create a new message.
  */
 export const AnnotationArgumentSchema: GenMessage<AnnotationArgument, {jsonType: AnnotationArgumentJson, validType: AnnotationArgumentValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 16);
+  messageDesc(file_oghamproto_ir_types, 17);
 
 /**
  * @generated from message oghamproto.ir.AnnotationLiteral
@@ -1308,7 +1431,7 @@ export type AnnotationLiteralValid = AnnotationLiteral;
  * Use `create(AnnotationLiteralSchema)` to create a new message.
  */
 export const AnnotationLiteralSchema: GenMessage<AnnotationLiteral, {jsonType: AnnotationLiteralJson, validType: AnnotationLiteralValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 17);
+  messageDesc(file_oghamproto_ir_types, 18);
 
 /**
  * @generated from message oghamproto.ir.AnnotationStruct
@@ -1337,7 +1460,7 @@ export type AnnotationStructValid = AnnotationStruct;
  * Use `create(AnnotationStructSchema)` to create a new message.
  */
 export const AnnotationStructSchema: GenMessage<AnnotationStruct, {jsonType: AnnotationStructJson, validType: AnnotationStructValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 18);
+  messageDesc(file_oghamproto_ir_types, 19);
 
 /**
  * @generated from message oghamproto.ir.AnnotationList
@@ -1366,7 +1489,7 @@ export type AnnotationListValid = AnnotationList;
  * Use `create(AnnotationListSchema)` to create a new message.
  */
 export const AnnotationListSchema: GenMessage<AnnotationList, {jsonType: AnnotationListJson, validType: AnnotationListValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 19);
+  messageDesc(file_oghamproto_ir_types, 20);
 
 /**
  * Full annotation definition (schema).
@@ -1447,7 +1570,7 @@ export type AnnotationDefinitionValid = AnnotationDefinition;
  * Use `create(AnnotationDefinitionSchema)` to create a new message.
  */
 export const AnnotationDefinitionSchema: GenMessage<AnnotationDefinition, {jsonType: AnnotationDefinitionJson, validType: AnnotationDefinitionValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 20);
+  messageDesc(file_oghamproto_ir_types, 21);
 
 /**
  * @generated from message oghamproto.ir.AnnotationParameter
@@ -1510,7 +1633,7 @@ export type AnnotationParameterValid = AnnotationParameter;
  * Use `create(AnnotationParameterSchema)` to create a new message.
  */
 export const AnnotationParameterSchema: GenMessage<AnnotationParameter, {jsonType: AnnotationParameterJson, validType: AnnotationParameterValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 21);
+  messageDesc(file_oghamproto_ir_types, 22);
 
 /**
  * Reference to a composed annotation.
@@ -1563,7 +1686,7 @@ export type AnnotationCompositionRefValid = AnnotationCompositionRef;
  * Use `create(AnnotationCompositionRefSchema)` to create a new message.
  */
 export const AnnotationCompositionRefSchema: GenMessage<AnnotationCompositionRef, {jsonType: AnnotationCompositionRefJson, validType: AnnotationCompositionRefValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 22);
+  messageDesc(file_oghamproto_ir_types, 23);
 
 /**
  * Source mapping for a projected field.
@@ -1604,7 +1727,7 @@ export type FieldMappingValid = FieldMapping;
  * Use `create(FieldMappingSchema)` to create a new message.
  */
 export const FieldMappingSchema: GenMessage<FieldMapping, {jsonType: FieldMappingJson, validType: FieldMappingValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 23);
+  messageDesc(file_oghamproto_ir_types, 24);
 
 /**
  * One link in a projection chain.
@@ -1711,7 +1834,7 @@ export type MappingLinkValid = MappingLink;
  * Use `create(MappingLinkSchema)` to create a new message.
  */
 export const MappingLinkSchema: GenMessage<MappingLink, {jsonType: MappingLinkJson, validType: MappingLinkValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 24);
+  messageDesc(file_oghamproto_ir_types, 25);
 
 /**
  * Trace on a Type: where did this type come from?
@@ -1769,7 +1892,7 @@ export type TypeTraceValid = TypeTrace;
  * Use `create(TypeTraceSchema)` to create a new message.
  */
 export const TypeTraceSchema: GenMessage<TypeTrace, {jsonType: TypeTraceJson, validType: TypeTraceValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 25);
+  messageDesc(file_oghamproto_ir_types, 26);
 
 /**
  * @generated from message oghamproto.ir.GenericOrigin
@@ -1816,7 +1939,7 @@ export type GenericOriginValid = GenericOrigin;
  * Use `create(GenericOriginSchema)` to create a new message.
  */
 export const GenericOriginSchema: GenMessage<GenericOrigin, {jsonType: GenericOriginJson, validType: GenericOriginValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 26);
+  messageDesc(file_oghamproto_ir_types, 27);
 
 /**
  * @generated from message oghamproto.ir.PickOmitOrigin
@@ -1877,7 +2000,7 @@ export type PickOmitOriginValid = PickOmitOrigin;
  * Use `create(PickOmitOriginSchema)` to create a new message.
  */
 export const PickOmitOriginSchema: GenMessage<PickOmitOrigin, {jsonType: PickOmitOriginJson, validType: PickOmitOriginValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 27);
+  messageDesc(file_oghamproto_ir_types, 28);
 
 /**
  * Trace on a Field: where did this field come from?
@@ -1914,7 +2037,7 @@ export type FieldTraceValid = FieldTrace;
  * Use `create(FieldTraceSchema)` to create a new message.
  */
 export const FieldTraceSchema: GenMessage<FieldTrace, {jsonType: FieldTraceJson, validType: FieldTraceValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 28);
+  messageDesc(file_oghamproto_ir_types, 29);
 
 /**
  * @generated from message oghamproto.ir.ShapeOrigin
@@ -1991,7 +2114,7 @@ export type ShapeOriginValid = ShapeOrigin;
  * Use `create(ShapeOriginSchema)` to create a new message.
  */
 export const ShapeOriginSchema: GenMessage<ShapeOrigin, {jsonType: ShapeOriginJson, validType: ShapeOriginValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 29);
+  messageDesc(file_oghamproto_ir_types, 30);
 
 /**
  * A reference from another type to this type.
@@ -2048,7 +2171,7 @@ export type TypeBackRefValid = TypeBackRef;
  * Use `create(TypeBackRefSchema)` to create a new message.
  */
 export const TypeBackRefSchema: GenMessage<TypeBackRef, {jsonType: TypeBackRefJson, validType: TypeBackRefValid}> = /*@__PURE__*/
-  messageDesc(file_oghamproto_ir_types, 30);
+  messageDesc(file_oghamproto_ir_types, 31);
 
 /**
  * @generated from enum oghamproto.ir.ScalarKind

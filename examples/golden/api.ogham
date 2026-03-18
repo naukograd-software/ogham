@@ -1,0 +1,188 @@
+package golden;
+
+// ============================================================================
+// Top-level API services for the logistics system.
+// Demonstrates: all RPC patterns — void, Pick/Omit in params, inline
+// request/response types, generic return types, client/server/bidi
+// streaming, annotation on service and rpc, std/rpc shapes.
+// ============================================================================
+
+import github.com/oghamlang/std/uuid;
+import github.com/oghamlang/std/time;
+import github.com/oghamlang/std/geo;
+import github.com/oghamlang/std/rpc;
+import github.com/oghamlang/examples/golden/common;
+import github.com/oghamlang/examples/golden/fleet;
+import github.com/oghamlang/examples/golden/warehouse;
+import github.com/oghamlang/examples/golden/shipment;
+import github.com/oghamlang/examples/golden/order;
+
+// ── Generic response wrapper ────────────────────────────────────────────
+
+type ListResponse<T> {
+    []T data = 1;
+    rpc.CursorPagination(2..3)
+}
+
+// ============================================================================
+// Fleet Service
+// ============================================================================
+
+@common::ServiceConfig(base_url="/api/v1/fleet", default_timeout_ms=10000)
+service FleetService {
+    // void input — list all vehicles
+    @common::MethodConfig(http_method="GET", http_path="/vehicles")
+    rpc ListVehicles(void) -> ListResponse<fleet.Vehicle>;
+
+    // simple input
+    @common::MethodConfig(http_method="GET", http_path="/vehicles/{id}", idempotent=true)
+    rpc GetVehicle(uuid.UUID) -> fleet.Vehicle;
+
+    // Pick in input params
+    rpc UpdateVehicleStatus(Pick<fleet.Vehicle, id, status, fuel_level_pct>) -> fleet.Vehicle;
+
+    // Inline request type — compiler generates CreateVehicleInput
+    @common::MethodConfig(http_method="POST", http_path="/vehicles")
+    rpc CreateVehicle({
+        string plate_number = 1;
+        fleet.VehicleType vehicle_type = 2;
+        common.Dimensions cargo_capacity = 3;
+        common.WeightKg max_payload = 4;
+    }) -> fleet.Vehicle;
+
+    // Inline response type — compiler generates AssignDriverOutput
+    rpc AssignDriver({
+        uuid.UUID driver_id = 1;
+        uuid.UUID vehicle_id = 2;
+        common.TimeWindow period = 3;
+    }) -> {
+        fleet.DriverAssignment assignment = 1;
+        bool was_reassigned = 2;
+    };
+
+    // Server streaming — live GPS positions
+    rpc TrackVehicle(uuid.UUID) -> stream fleet.GpsPosition;
+
+    // Void return
+    rpc DecommissionVehicle(uuid.UUID) -> void;
+}
+
+// ============================================================================
+// Warehouse Service
+// ============================================================================
+
+@common::ServiceConfig(base_url="/api/v1/warehouse")
+service WarehouseService {
+    rpc GetWarehouse(uuid.UUID) -> warehouse.Warehouse;
+
+    rpc ListInventory({
+        uuid.UUID warehouse_id = 1;
+        rpc.PageRequest(2..3)
+        rpc.Sortable(4..5)
+        string? sku_filter = 6;
+        warehouse.InventoryStatus? status_filter = 7;
+    }) -> ListResponse<warehouse.InventoryItem>;
+
+    // Client streaming — bulk stock intake
+    rpc BulkIngest(stream warehouse.StockMovement) -> {
+        int32 accepted = 1;
+        int32 rejected = 2;
+        []string errors = 3;
+    };
+
+    // Bidirectional streaming — real-time inventory sync
+    rpc SyncInventory(stream warehouse.StockMovement) -> stream warehouse.InventoryItem;
+}
+
+// ============================================================================
+// Shipment Service
+// ============================================================================
+
+@common::ServiceConfig(base_url="/api/v1/shipments")
+service ShipmentService {
+    @common::MethodConfig(http_method="POST", http_path="/shipments")
+    rpc CreateShipment({
+        common.Address origin = 1;
+        common.ContactInfo sender = 2;
+        common.Address destination = 3;
+        common.ContactInfo receiver = 4;
+        []shipment.Package packages = 5;
+        oneof delivery_method {
+            shipment.StandardDelivery standard = 6;
+            shipment.ExpressDelivery express = 7;
+            shipment.ScheduledDelivery scheduled = 8;
+        }
+    }) -> shipment.Shipment;
+
+    @common::MethodConfig(http_method="GET", http_path="/shipments/{tracking_number}", idempotent=true)
+    rpc GetShipment(common.TrackingNumber) -> shipment.Shipment;
+
+    // Returns a Pick subset
+    rpc GetShipmentPublic(common.TrackingNumber) -> shipment.ShipmentPublic;
+
+    // Returns Omit subset
+    rpc GetShipmentNoAudit(common.TrackingNumber) -> shipment.ShipmentNoAudit;
+
+    rpc ListShipments({
+        rpc.PageRequest(1..2)
+        shipment.ShipmentStatus? status = 3;
+        uuid.UUID? driver_id = 4;
+    }) -> ListResponse<shipment.ShipmentSummary>;
+
+    rpc UpdateStatus({
+        common.TrackingNumber tracking_number = 1;
+        shipment.ShipmentStatus new_status = 2;
+        string? description = 3;
+        geo.LatLng? location = 4;
+    }) -> shipment.Shipment;
+
+    // Server streaming — live tracking events
+    rpc TrackShipment(common.TrackingNumber) -> stream shipment.TrackingEvent;
+
+    // Client streaming — batch tracking upload from devices
+    rpc UploadTrackingBatch(stream shipment.TrackingEvent) -> {
+        int32 processed = 1;
+        int32 failed = 2;
+    };
+}
+
+// ============================================================================
+// Order Service
+// ============================================================================
+
+@common::ServiceConfig(base_url="/api/v1/orders")
+service OrderService {
+    @common::MethodConfig(http_method="POST", http_path="/orders")
+    rpc CreateOrder({
+        string customer_id = 1;
+        string customer_name = 2;
+        common.ContactInfo customer_contact = 3;
+        common.Address billing_address = 4;
+        common.Address shipping_address = 5;
+        []order.LineItem items = 6;
+        order.PaymentMethod payment_method = 7;
+    }) -> order.Order;
+
+    @common::MethodConfig(http_method="GET", http_path="/orders/{id}", idempotent=true)
+    rpc GetOrder(uuid.UUID) -> order.Order;
+
+    rpc GetOrderPublic(uuid.UUID) -> order.OrderPublic;
+
+    rpc ListOrders({
+        rpc.PageRequest(1..2)
+        rpc.Sortable(3..4)
+        order.OrderStatus? status = 5;
+        string? customer_id = 6;
+    }) -> ListResponse<order.OrderPublic>;
+
+    rpc CancelOrder(uuid.UUID) -> void;
+
+    // Bidirectional streaming — order status feed
+    rpc OrderStatusFeed(stream {
+        []string order_numbers = 1;
+    }) -> stream {
+        string order_number = 1;
+        order.OrderStatus status = 2;
+        time.Timestamp updated_at = 3;
+    };
+}

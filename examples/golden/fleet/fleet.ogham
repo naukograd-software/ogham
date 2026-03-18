@@ -1,0 +1,130 @@
+package fleet;
+
+// ============================================================================
+// Fleet management — vehicles, drivers, and assignments.
+// Demonstrates: directory import, nested type,
+// nested enum, oneof, map fields, shape injection with ranges,
+// reserved, validation annotations.
+// ============================================================================
+
+import github.com/oghamlang/std/uuid;
+import github.com/oghamlang/std/time;
+import github.com/oghamlang/std/validate;
+import github.com/oghamlang/examples/golden/common;
+
+// ── Enums ───────────────────────────────────────────────────────────────
+
+enum VehicleType {
+    // Implicit Unspecified = 0
+    Van = 1;
+    Truck = 2;
+    Motorcycle = 3;
+    Bicycle = 5;
+    SemiTrailer = 6;
+    BoxTruck = 7;
+}
+
+enum VehicleStatus {
+    Available = 1;
+    InTransit = 2;
+    Maintenance = 3;
+    OutOfService = 4;
+}
+
+enum DriverLicense {
+    B = 1;
+    C = 2;
+    CE = 3;
+    D = 4;
+}
+
+// ── Vehicle ─────────────────────────────────────────────────────────────
+
+type Vehicle {
+    common.BaseModel(1..4)
+    /*
+        Shape injection with range (1..4).
+        Expands to:
+        uuid.UUID id = 1;
+        time.Timestamp created_at = 2;
+        time.Timestamp updated_at = 3;
+        time.Timestamp? deleted_at = 4;
+    */
+
+    @validate::Length(min=5, max=15)
+    string plate_number = 5;
+    VehicleType vehicle_type = 6;
+    VehicleStatus status = 7;
+    common.Dimensions cargo_capacity = 8;
+    common.WeightKg max_payload = 9;
+    double fuel_level_pct = 10;
+    int64 odometer_km = 11;
+
+    // Nested type — only visible within Vehicle
+    type MaintenanceRecord {
+        uuid.UUID id = 1;
+        time.Timestamp date = 2;
+        string description = 3;
+        common.Cost cost = 4;
+    }
+
+    []MaintenanceRecord maintenance_history = 12;
+    map<string, string> telemetry = 13;
+    common.Metadata? metadata = 14;
+
+    reserved 15, 16;
+}
+
+// ── Driver ──────────────────────────────────────────────────────────────
+
+type Driver {
+    common.BaseModel(1..4)
+
+    @validate::Required()
+    @validate::Length(min=1, max=100)
+    string first_name = 5;
+
+    @validate::Required()
+    string last_name = 6;
+
+    @validate::Pattern(pattern="^\\+[1-9]\\d{6,14}$")
+    string phone = 7;
+
+    string? email = 8;
+    DriverLicense license_class = 9;
+    time.Timestamp license_expiry = 10;
+
+    // Nested enum — only visible within Driver
+    enum EmploymentStatus {
+        FullTime = 1;
+        PartTime = 2;
+        Contractor = 3;
+    }
+    EmploymentStatus employment_status = 11;
+
+    // Oneof — driver's current location source
+    oneof location {
+        common.Address depot = 12;
+        GpsPosition live = 13;
+    }
+
+    uuid.UUID? assigned_vehicle_id = 14;
+}
+
+type GpsPosition {
+    double lat = 1;
+    double lng = 2;
+    double? altitude = 3;
+    float speed_kmh = 4;
+    float heading = 5;
+    time.Timestamp recorded_at = 6;
+}
+
+// ── Assignments ─────────────────────────────────────────────────────────
+
+type DriverAssignment {
+    uuid.UUID driver_id = 1;
+    uuid.UUID vehicle_id = 2;
+    common.TimeWindow period = 3;
+    bool active = 4;
+}

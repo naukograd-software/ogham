@@ -487,6 +487,7 @@ mod tests {
             back_references: Vec::new(),
             trace: None,
             location: None,
+            module: None,
         }
     }
 
@@ -635,6 +636,7 @@ mod tests {
                 values: vec![make_enum_val("Unspecified", 0), make_enum_val("Active", 1), make_enum_val("Deleted", 2)],
                 annotations: Vec::new(),
                 location: None,
+                module: None,
             }],
             Vec::new(),
         );
@@ -646,6 +648,7 @@ mod tests {
                 values: vec![make_enum_val("Unspecified", 0), make_enum_val("Active", 1)],
                 annotations: Vec::new(),
                 location: None,
+                module: None,
             }],
             Vec::new(),
         );
@@ -663,6 +666,7 @@ mod tests {
                 values: vec![make_enum_val("Unspecified", 0), make_enum_val("Active", 1)],
                 annotations: Vec::new(),
                 location: None,
+                module: None,
             }],
             Vec::new(),
         );
@@ -674,6 +678,7 @@ mod tests {
                 values: vec![make_enum_val("Unspecified", 0), make_enum_val("Enabled", 1)],
                 annotations: Vec::new(),
                 location: None,
+                module: None,
             }],
             Vec::new(),
         );

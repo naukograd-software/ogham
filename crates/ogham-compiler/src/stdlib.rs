@@ -64,6 +64,10 @@ static STD_SOURCES: &[(&str, &str)] = &[
         "std/rpc/rpc.ogham",
         include_str!("../../../std/rpc/rpc.ogham"),
     ),
+    (
+        "std/default/default.ogham",
+        include_str!("../../../std/default/default.ogham"),
+    ),
 ];
 
 /// Map of import path prefix → std package short name.
@@ -83,6 +87,7 @@ static STD_IMPORT_MAP: &[(&str, &str)] = &[
     ("github.com/oghamlang/std/wrappers", "wrappers"),
     ("github.com/oghamlang/std/validate", "validate"),
     ("github.com/oghamlang/std/rpc", "rpc"),
+    ("github.com/oghamlang/std/default", "default"),
 ];
 
 /// Check if an import path refers to a std package.

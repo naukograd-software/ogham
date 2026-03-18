@@ -9,14 +9,16 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-/// Compile a project directory and return the IR module + compile result.
+/// Compile a project directory and return the IR module, compile result, and module path.
 pub fn compile_project(
     dir: &Path,
-) -> Result<(ogham_proto::oghamproto::ir::Module, pipeline::CompileResult), String> {
+) -> Result<(ogham_proto::oghamproto::ir::Module, pipeline::CompileResult, String), String> {
     let mod_file = manifest::load_mod_file(dir).ok();
     if let Some(ref m) = mod_file {
         eprintln!("module: {} v{}", m.module, m.version);
     }
+    let module_path = mod_file.as_ref().map(|m| m.module.clone()).unwrap_or_default();
+    let module_version = mod_file.as_ref().map(|m| m.version.clone()).unwrap_or_default();
 
     let schemas_dir = dir.join("schemas");
     let search_dir = if schemas_dir.is_dir() { &schemas_dir } else { dir };
@@ -63,14 +65,24 @@ pub fn compile_project(
         })
         .unwrap_or_else(|| "default".to_string());
 
-    let module = lower::inflate(&result.interner, &result.arenas, &result.symbols, &package);
-    Ok((module, result))
+    let module_info = if !module_path.is_empty() {
+        Some(ogham_proto::oghamproto::ir::ModuleInfo {
+            module_path: module_path.clone(),
+            package: package.clone(),
+            version: module_version,
+            generate: true,
+        })
+    } else {
+        None
+    };
+    let module = lower::inflate(&result.interner, &result.arenas, &result.symbols, &package, module_info);
+    Ok((module, result, module_path))
 }
 
 pub fn run(args: GenerateArgs) -> Result<(), String> {
     let dir = &args.dir;
-    let (module, _result) = compile_project(dir)?;
-    let request_bytes = serialize_request(&module, &args)?;
+    let (module, _result, module_path) = compile_project(dir)?;
+    let request_bytes = serialize_request(&module, &args, &module_path)?;
 
     eprintln!("compiled successfully ({} bytes IR)", request_bytes.len());
 
@@ -96,6 +108,7 @@ pub fn run(args: GenerateArgs) -> Result<(), String> {
             env!("CARGO_PKG_VERSION"),
             plugin.opts.clone(),
             &out_dir.to_string_lossy(),
+            &module_path,
         );
         let request_with_out = {
             use prost::Message;
@@ -109,9 +122,9 @@ pub fn run(args: GenerateArgs) -> Result<(), String> {
             .unwrap_or("unknown");
 
         if let Some(ref grpc_addr) = plugin.grpc {
-            run_plugin_grpc(plugin_name, grpc_addr, req)?;
+            run_plugin_grpc(plugin_name, grpc_addr, req, &out_dir)?;
         } else {
-            run_plugin(plugin_name, plugin.path.as_deref(), &request_with_out)?;
+            run_plugin(plugin_name, plugin.path.as_deref(), &request_with_out, &out_dir)?;
         }
     }
 
@@ -171,6 +184,7 @@ fn run_breaking_check(
         &old_result.arenas,
         &old_result.symbols,
         &old_package,
+        None, // no module info needed for breaking change comparison
     );
 
     let violations = ogham_compiler::breaking::compare(&old_module, new_module);
@@ -212,6 +226,7 @@ fn run_breaking_check(
 fn serialize_request(
     module: &ogham_proto::oghamproto::ir::Module,
     _args: &GenerateArgs,
+    module_path: &str,
 ) -> Result<Vec<u8>, String> {
     use prost::Message;
     let request = lower::build_request(
@@ -219,6 +234,7 @@ fn serialize_request(
         env!("CARGO_PKG_VERSION"),
         Default::default(),
         ".",
+        module_path,
     );
     let mut buf = Vec::new();
     request.encode(&mut buf).map_err(|e| format!("failed to encode request: {}", e))?;
@@ -354,7 +370,7 @@ fn dirs_fallback() -> Option<String> {
         .or_else(|| std::env::var("USERPROFILE").ok())
 }
 
-fn run_plugin(name: &str, explicit_path: Option<&str>, request_bytes: &[u8]) -> Result<(), String> {
+fn run_plugin(name: &str, explicit_path: Option<&str>, request_bytes: &[u8], out_dir: &Path) -> Result<(), String> {
     let bin_name = resolve_plugin_binary(name, explicit_path)?;
 
     eprintln!("running plugin: {}", bin_name);
@@ -388,30 +404,7 @@ fn run_plugin(name: &str, explicit_path: Option<&str>, request_bytes: &[u8]) -> 
         eprintln!("plugin {}: {}: {}", bin_name, err.severity, err.message);
     }
 
-    for file in &response.files {
-        let path = Path::new(&file.name);
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| format!("cannot create dir {}: {}", parent.display(), e))?;
-        }
-
-        if file.append {
-            let mut f = std::fs::OpenOptions::new()
-                .append(true)
-                .create(true)
-                .open(path)
-                .map_err(|e| format!("cannot open {}: {}", path.display(), e))?;
-            f.write_all(&file.content)
-                .map_err(|e| format!("cannot write {}: {}", path.display(), e))?;
-        } else {
-            std::fs::write(path, &file.content)
-                .map_err(|e| format!("cannot write {}: {}", path.display(), e))?;
-        }
-
-        eprintln!("  wrote {}", file.name);
-    }
-
-    eprintln!("plugin {} generated {} file(s)", bin_name, response.files.len());
+    write_response_files(&response, out_dir, &bin_name)?;
     Ok(())
 }
 
@@ -419,6 +412,7 @@ fn run_plugin_grpc(
     name: &str,
     addr: &str,
     request: ogham_proto::oghamproto::compiler::OghamCompileRequest,
+    out_dir: &Path,
 ) -> Result<(), String> {
     use ogham_proto::oghamproto::compiler::ogham_plugin_api_client::OghamPluginApiClient;
 
@@ -450,17 +444,39 @@ fn run_plugin_grpc(
         eprintln!("plugin {}: {}: {}", name, err.severity, err.message);
     }
 
+    write_response_files(&response, out_dir, name)?;
+    Ok(())
+}
+
+/// Write plugin response files to out_dir. File names are relative paths.
+fn write_response_files(
+    response: &ogham_proto::oghamproto::compiler::OghamCompileResponse,
+    out_dir: &Path,
+    plugin_name: &str,
+) -> Result<(), String> {
     for file in &response.files {
-        let path = Path::new(&file.name);
+        let path = out_dir.join(&file.name);
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
                 .map_err(|e| format!("cannot create dir {}: {}", parent.display(), e))?;
         }
-        std::fs::write(path, &file.content)
-            .map_err(|e| format!("cannot write {}: {}", path.display(), e))?;
-        eprintln!("  wrote {}", file.name);
+
+        if file.append {
+            let mut f = std::fs::OpenOptions::new()
+                .append(true)
+                .create(true)
+                .open(&path)
+                .map_err(|e| format!("cannot open {}: {}", path.display(), e))?;
+            f.write_all(&file.content)
+                .map_err(|e| format!("cannot write {}: {}", path.display(), e))?;
+        } else {
+            std::fs::write(&path, &file.content)
+                .map_err(|e| format!("cannot write {}: {}", path.display(), e))?;
+        }
+
+        eprintln!("  wrote {}", path.display());
     }
 
-    eprintln!("plugin {} (gRPC) generated {} file(s)", name, response.files.len());
+    eprintln!("plugin {} generated {} file(s)", plugin_name, response.files.len());
     Ok(())
 }

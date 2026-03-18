@@ -4,7 +4,6 @@ import github.com/oghamlang/std/validate;
 
 // ULID — Universally Unique Lexicographically Sortable Identifier.
 // Binary representation: 128-bit, exactly 16 bytes.
-@cast(bytes)
 @validate::Length(exact=16)
 type ULID = bytes;
 

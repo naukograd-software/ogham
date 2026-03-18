@@ -19,8 +19,10 @@ make fmt
 
 - `crates/` - Rust workspace crates (`ogham-core`, `ogham-compiler`, `ogham-cli`, `ogham-lsp`, `ogham-proto`)
 - `proto/` - protobuf sources and generation config
+- `go/` - Go SDK and plugins
+- `ts/` - TypeScript SDK
+- `std/` - standard library packages
 - `docs/` - architecture decisions and syntax references
-- `editors/` - editor integrations
 
 ## References
 

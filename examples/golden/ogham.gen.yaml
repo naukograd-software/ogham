@@ -1,0 +1,13 @@
+generate:
+  plugins:
+    - name: github.com/oghamlang/ogham-gen-go
+      out: gen/go/
+    - name: github.com/oghamlang/ogham-gen-proto
+      out: gen/proto/
+      opts:
+        go_package_prefix: github.com/oghamlang/examples/golden/gen/proto
+        java_package_prefix: com.oghamlang.examples.golden
+        csharp_namespace_prefix: Oghamlang.Examples.Golden
+        optimize_for: SPEED
+    #- name: github.com/oghamlang/ogham-gen-ts
+    #  out: gen/ts/

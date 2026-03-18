@@ -1,0 +1,130 @@
+package common;
+
+// ============================================================================
+// Common types for the logistics system.
+// This file demonstrates: imports, type aliases, shapes, generics,
+// default annotations, all primitive types, collection types, optional types.
+// ============================================================================
+
+import github.com/oghamlang/std/uuid;
+import github.com/oghamlang/std/time;
+import github.com/oghamlang/std/money;
+import github.com/oghamlang/std/geo;
+import github.com/oghamlang/std/duration;
+import github.com/oghamlang/std/default;
+
+/*
+    Type aliases — compile-time only, no runtime overhead.
+    Useful for domain semantics over raw primitives.
+*/
+
+type Id = uuid.UUID;
+type TrackingNumber = string;
+type WeightKg = double;
+type IsFragile = bool;
+
+type Barcode = bytes;
+
+// ── Shapes ──────────────────────────────────────────────────────────────
+
+// Simple shape — gives every model a standard identifier
+shape Identifiable {
+    Id id;
+}
+
+// Shape with default value — standard audit timestamps
+shape Timestamps {
+    @default::Default(now)
+    time.Timestamp created_at;
+    @default::Default(now)
+    time.Timestamp updated_at;
+}
+
+// Shape with optional field
+shape SafeDelete {
+    time.Timestamp? deleted_at;
+}
+
+// Composable shape — includes other shapes
+shape BaseModel {
+    Identifiable;
+    Timestamps, SafeDelete;
+}
+
+// Generic shape — compile-time type parameter
+shape Paginated<T> {
+    T items;
+}
+
+// Shape used for Omit operations later
+shape AuditFields {
+    time.Timestamp created_at;
+    time.Timestamp updated_at;
+}
+
+// ── Shared types ────────────────────────────────────────────────────────
+
+// Demonstrates all primitive types in one struct
+type SystemLimits {
+    bool enabled = 1;
+    string region = 2;
+    bytes encryption_key = 3;
+    i8 priority_level = 4;
+    int16 retry_count = 5;
+    int32 batch_size = 6;
+    int64 max_payload_bytes = 7;
+    int sequence_number = 8;       // alias for int64
+    uint8 flags = 9;
+    byte header_version = 10;      // alias for uint8
+    uint16 port = 11;
+    uint32 ttl_seconds = 12;
+    uint64 total_processed = 13;
+    uint counter = 14;             // alias for uint64
+    float temperature_celsius = 15;
+    double precise_weight = 16;
+}
+
+// Address — used across the entire logistics domain
+type Address {
+    string street = 1;
+    string city = 2;
+    string state = 3;
+    string postal_code = 4;
+    string country_code = 5;
+    geo.LatLng? coordinates = 6;
+}
+
+// Contact information
+type ContactInfo {
+    string name = 1;
+    string phone = 2;
+    string? email = 3;
+}
+
+// Monetary amount with currency
+type Cost {
+    money.Money amount = 1;
+    string? description = 2;
+}
+
+// Time window for deliveries / pickups
+type TimeWindow {
+    time.Timestamp start = 1;
+    time.Timestamp end = 2;
+    duration.Duration? tolerance = 3;
+}
+
+// Dimensions — used for packages
+type Dimensions {
+    double length_cm = 1;
+    double width_cm = 2;
+    double height_cm = 3;
+    WeightKg weight = 4;
+}
+
+// Map + optional demo
+type Metadata {
+    map<string, string> labels = 1;
+    map<int, float> scores = 2;
+    string? notes = 3;
+}

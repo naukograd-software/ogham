@@ -64,7 +64,7 @@ pub struct SymbolTable {
     pub enums: HashMap<Sym, EnumId>,
     pub services: HashMap<Sym, ServiceId>,
     pub shapes: HashMap<Sym, ShapeId>,
-    pub annotations: HashMap<(Sym, Sym), AnnotationDefId>, // (library, name)
+    pub annotations: HashMap<(Sym, Sym), Vec<AnnotationDefId>>, // (library, name) → overloads
     /// Per-file import maps: file → (short_name → full_name)
     pub imports: HashMap<Sym, HashMap<Sym, Sym>>,
 }
@@ -145,8 +145,6 @@ pub struct EnumDef {
 pub struct EnumValueDef {
     pub name: Sym,
     pub number: i32,
-    pub is_removed: bool,
-    pub fallback: Option<Sym>,
     pub annotations: Vec<AnnotationCall>,
     pub loc: Loc,
 }
@@ -199,6 +197,32 @@ pub struct ShapeFieldDef {
     pub loc: Loc,
 }
 
+// ── Annotation type constraints ────────────────────────────────────────
+
+/// Type constraint on an annotation target: `for field(string | int32)`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeConstraint {
+    /// No constraint or `any` — matches everything.
+    Any,
+    /// Scalar type: `string`, `int32`, etc.
+    Scalar(ScalarKind),
+    /// Any message type: `message`.
+    Message,
+    /// Any enum type: `enum`.
+    Enum,
+    /// Specific named type: `time.Timestamp`.
+    Named(Sym),
+    /// Union: `int32 | int64 | uint32`.
+    Union(Vec<TypeConstraint>),
+    /// Array: `[]string`, `[]any`, `[]message`.
+    Array(Box<TypeConstraint>),
+    /// Map: `map<string, any>`.
+    Map {
+        key: Box<TypeConstraint>,
+        value: Box<TypeConstraint>,
+    },
+}
+
 // ── Annotation definitions ─────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
@@ -206,10 +230,17 @@ pub struct AnnotationDef {
     pub library: Sym,
     pub name: Sym,
     pub full_name: Sym,
-    pub targets: Vec<Sym>,
+    pub targets: Vec<AnnotationTarget>,
     pub params: Vec<AnnotationParamDef>,
     pub compositions: Vec<AnnotationCompositionRef>,
     pub loc: Loc,
+}
+
+/// A single annotation target with optional type constraint.
+#[derive(Debug, Clone)]
+pub struct AnnotationTarget {
+    pub kind: Sym,                             // "field", "type", "enum", etc.
+    pub type_constraint: Option<TypeConstraint>, // None = any
 }
 
 #[derive(Debug, Clone)]

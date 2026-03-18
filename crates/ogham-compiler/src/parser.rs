@@ -359,6 +359,7 @@ impl<'s> Parser<'s> {
                 Some(KwOneof) => self.parse_oneof_decl(),
                 Some(KwType) => self.parse_nested_type_decl(),
                 Some(KwEnum) => self.parse_nested_enum_decl(),
+                Some(KwReserved) => self.parse_reserved_decl(),
                 _ => {
                     self.parse_field_or_shape_injection();
                 }
@@ -373,12 +374,6 @@ impl<'s> Parser<'s> {
     fn parse_type_member(&mut self) {
         self.eat_trivia();
 
-        // Check for @reserved(N);
-        if self.is_reserved_decl() {
-            self.parse_reserved_decl();
-            return;
-        }
-
         // Collect annotations
         while self.current_non_trivia() == Some(At) {
             self.parse_annotation_call();
@@ -389,29 +384,23 @@ impl<'s> Parser<'s> {
             Some(KwOneof) => self.parse_oneof_decl(),
             Some(KwType) => self.parse_nested_type_decl(),
             Some(KwEnum) => self.parse_nested_enum_decl(),
+            Some(KwReserved) => self.parse_reserved_decl(),
             _ => self.parse_field_or_shape_injection(),
         }
     }
 
-    fn is_reserved_decl(&self) -> bool {
-        // @reserved(N);
-        let t0 = self.peek_non_trivia(0); // At
-        let t1 = self.peek_non_trivia(1); // KwReserved
-        t0 == Some(At) && t1 == Some(KwReserved)
-    }
-
+    /// Parse `reserved 2, 3, 5;`
     fn parse_reserved_decl(&mut self) {
         self.builder.start_node(ReservedDecl.into());
         self.eat_trivia();
-        self.bump(); // '@'
-        self.eat_trivia();
         self.bump(); // 'reserved'
-        self.expect(LParen);
         self.eat_trivia();
-        self.expect_int();
-        self.expect(RParen);
-        // Optional semicolon — syntax examples omit it
-        self.eat(Semicolon);
+        self.expect_int(); // first number
+        while self.eat(Comma) {
+            self.eat_trivia();
+            self.expect_int();
+        }
+        self.expect(Semicolon);
         self.builder.finish_node();
     }
 
@@ -430,10 +419,11 @@ impl<'s> Parser<'s> {
 
     fn is_shape_injection(&self) -> bool {
         // Shape injection patterns:
-        //   Ident(N..M)                 — simple: MyShape(1..4)
-        //   Ident.Ident(N..M)           — qualified: rpc.PageRequest(1..2)
-        //   Ident.Ident.Ident(N..M)     — deep qualified
-        // We scan forward through Ident.Ident... until we find `(` followed by IntLiteral and `..`
+        //   Ident(N..M)                       — simple: MyShape(1..4)
+        //   Ident.Ident(N..M)                 — qualified: rpc.PageRequest(1..2)
+        //   Ident.Ident<TypeArg>(N..M)        — generic qualified: common.Paginated<Order>(1..1)
+        // We scan forward through Ident.Ident... skipping <...> type args,
+        // until we find `(` followed by IntLiteral and `..`
         let mut i = 0;
         loop {
             let t = self.peek_non_trivia(i);
@@ -445,6 +435,25 @@ impl<'s> Parser<'s> {
             if next == Some(Dot) {
                 i += 1; // skip dot, continue to next ident
                 continue;
+            }
+            // Skip type arguments: <...>
+            if next == Some(LAngle) {
+                i += 1;
+                let mut depth = 1;
+                while depth > 0 {
+                    match self.peek_non_trivia(i) {
+                        Some(LAngle) => { depth += 1; i += 1; }
+                        Some(RAngle) => { depth -= 1; i += 1; }
+                        None => return false,
+                        _ => { i += 1; }
+                    }
+                }
+                // After closing >, check for (N..M)
+                if self.peek_non_trivia(i) == Some(LParen) {
+                    return self.peek_non_trivia(i + 1) == Some(IntLiteral)
+                        && self.peek_non_trivia(i + 2) == Some(DotDot);
+                }
+                return false;
             }
             if next == Some(LParen) {
                 // Check: ( IntLiteral .. IntLiteral )
@@ -460,6 +469,10 @@ impl<'s> Parser<'s> {
         self.eat_trivia();
         // Parse qualified shape name: Ident or Ident.Ident.Ident...
         self.parse_qualified_name();
+        // Optional type arguments: <Type, Type, ...>
+        if self.current() == Some(LAngle) {
+            self.parse_type_args();
+        }
         self.expect(LParen);
         self.eat_trivia();
         self.expect_int(); // start
@@ -782,11 +795,15 @@ impl<'s> Parser<'s> {
             let saved = self.save_pos();
             match self.current_non_trivia() {
                 Some(RBrace) | None => break,
+                Some(KwOneof) => self.parse_oneof_decl(),
                 Some(At) => {
                     while self.current_non_trivia() == Some(At) {
                         self.parse_annotation_call();
                     }
-                    self.parse_field_or_shape_injection();
+                    match self.current_non_trivia() {
+                        Some(KwOneof) => self.parse_oneof_decl(),
+                        _ => self.parse_field_or_shape_injection(),
+                    }
                 }
                 _ => self.parse_field_or_shape_injection(),
             }
@@ -826,12 +843,70 @@ impl<'s> Parser<'s> {
     fn parse_annotation_targets(&mut self) {
         self.builder.start_node(AnnotationTargets.into());
         self.eat_trivia();
-        self.expect_ident_or_keyword(); // target (type, field, etc. — some are keywords)
+        self.expect_ident_or_keyword(); // target (type, field, etc.)
+        // Optional type constraint: field(string | int32)
+        if self.current() == Some(LParen) {
+            self.parse_annotation_target_constraint();
+        }
         while self.eat(Pipe) {
             self.eat_trivia();
             self.expect_ident_or_keyword();
+            if self.current() == Some(LParen) {
+                self.parse_annotation_target_constraint();
+            }
         }
         self.builder.finish_node();
+    }
+
+    /// Parse `(string | int32 | []any | map<K,V> | message | time.Timestamp)`
+    fn parse_annotation_target_constraint(&mut self) {
+        self.builder.start_node(AnnotationTargetConstraint.into());
+        self.bump(); // '('
+        self.eat_trivia();
+        self.parse_type_constraint_atom();
+        self.eat_trivia();
+        while self.current_non_trivia() == Some(Pipe) {
+            self.bump(); // '|'
+            self.eat_trivia();
+            self.parse_type_constraint_atom();
+            self.eat_trivia();
+        }
+        self.expect(RParen);
+        self.builder.finish_node();
+    }
+
+    /// Parse a single type constraint atom: `string`, `[]int32`, `map<K,V>`,
+    /// `message`, `enum`, `any`, `time.Timestamp`
+    fn parse_type_constraint_atom(&mut self) {
+        self.eat_trivia();
+        match self.current_non_trivia() {
+            // []T — array constraint ([] is a single Brackets token)
+            Some(Brackets) => {
+                self.bump(); // '[]'
+                self.eat_trivia();
+                self.parse_type_constraint_atom(); // element type
+            }
+            // map<K, V>
+            Some(KwMap) => {
+                self.bump(); // 'map'
+                self.expect(LAngle);
+                self.eat_trivia();
+                self.parse_type_constraint_atom(); // key
+                self.expect(Comma);
+                self.eat_trivia();
+                self.parse_type_constraint_atom(); // value
+                self.expect(RAngle);
+            }
+            // ident — scalar name, `any`, `message`, `enum`, or qualified name
+            _ => {
+                self.expect_ident_or_keyword();
+                // Check for qualified name: time.Timestamp
+                while self.current() == Some(Dot) {
+                    self.bump(); // '.'
+                    self.expect_ident_or_keyword();
+                }
+            }
+        }
     }
 
     fn parse_annotation_member(&mut self) {
@@ -953,35 +1028,26 @@ impl<'s> Parser<'s> {
         self.bump(); // '@'
         self.eat_trivia();
 
-        // Built-in: @default(...), @cast(...), @removed(...), @reserved(...)
         // Library: @lib::Name(...)
-        match self.current() {
-            Some(KwDefault) | Some(KwCast) | Some(KwRemoved) | Some(KwReserved) => {
-                self.bump(); // builtin name
-                if self.eat(LParen) {
-                    self.eat_trivia();
-                    if self.current_non_trivia() != Some(RParen) {
-                        self.parse_annotation_args_inner();
-                    }
-                    self.expect(RParen);
-                }
+        // Simple: @name(...)
+        if self.peek_non_trivia(1) == Some(ColonColon) {
+            // Library annotation: ident :: ident ( args )
+            self.expect_ident(); // library name
+            self.expect(ColonColon);
+            self.eat_trivia();
+            self.expect_ident(); // annotation name
+        } else {
+            // Simple annotation: @name(...) e.g. @default(now)
+            self.expect_ident(); // annotation name
+        }
+        self.eat_trivia();
+        if self.current() == Some(LParen) {
+            self.bump();
+            self.eat_trivia();
+            if self.current_non_trivia() != Some(RParen) {
+                self.parse_annotation_args_inner();
             }
-            _ => {
-                // Library annotation: ident :: ident ( args )
-                self.expect_ident(); // library name
-                self.expect(ColonColon);
-                self.eat_trivia();
-                self.expect_ident(); // annotation name
-                self.eat_trivia();
-                if self.current() == Some(LParen) {
-                    self.bump();
-                    self.eat_trivia();
-                    if self.current_non_trivia() != Some(RParen) {
-                        self.parse_annotation_args_inner();
-                    }
-                    self.expect(RParen);
-                }
-            }
+            self.expect(RParen);
         }
 
         self.builder.finish_node();
@@ -1062,7 +1128,6 @@ impl<'s> Parser<'s> {
         match self.current() {
             Some(StringLiteral) | Some(IntLiteral) | Some(FloatLiteral) => self.bump(),
             Some(KwTrue) | Some(KwFalse) => self.bump(),
-            Some(KwNow) => self.bump(),
             Some(Minus) => {
                 // Negative number
                 self.bump(); // '-'
@@ -1180,14 +1245,14 @@ impl<'s> Parser<'s> {
     fn parse_ident_list(&mut self) {
         self.builder.start_node(IdentList.into());
         self.eat_trivia();
-        self.expect_ident();
+        self.parse_qualified_name(); // supports both Ident and Ident.Ident
         while self.eat(Comma) {
             self.eat_trivia();
             // Stop before '>'
             if self.current_non_trivia() == Some(RAngle) {
                 break;
             }
-            self.expect_ident();
+            self.parse_qualified_name();
         }
         self.builder.finish_node();
     }
@@ -1254,8 +1319,8 @@ fn is_keyword(kind: SyntaxKind) -> bool {
         kind,
         KwPackage | KwImport | KwAs | KwType | KwShape | KwEnum | KwOneof
         | KwService | KwRpc | KwAnnotation | KwFor | KwVoid | KwStream
-        | KwMap | KwPick | KwOmit | KwTrue | KwFalse | KwNow | KwSelf
-        | KwDefault | KwCast | KwRemoved | KwReserved | KwFallback
+        | KwMap | KwPick | KwOmit | KwTrue | KwFalse | KwSelf
+        | KwReserved
     )
 }
 
@@ -1494,9 +1559,9 @@ type User {
     }
 
     #[test]
-    fn parse_enum_with_removed() {
+    fn parse_enum_with_annotation() {
         let root = parse_ok(
-            "enum Status { Active = 1; @removed(fallback=Active) Deleted = 2; }",
+            "enum Status { Active = 1; @deprecated(reason=Active) Deleted = 2; }",
         );
         let kinds = node_kinds(&root);
         assert!(kinds.contains(&AnnotationCall));
@@ -1609,8 +1674,15 @@ type User {
     }
 
     #[test]
-    fn parse_builtin_reserved() {
-        let root = parse_ok("type T { string a = 1; @reserved(2) }");
+    fn parse_reserved_single() {
+        let root = parse_ok("type T { string a = 1; reserved 2; }");
+        let kinds = node_kinds(&root);
+        assert!(kinds.contains(&ReservedDecl));
+    }
+
+    #[test]
+    fn parse_reserved_multiple() {
+        let root = parse_ok("type T { string a = 1; reserved 2, 3, 5; }");
         let kinds = node_kinds(&root);
         assert!(kinds.contains(&ReservedDecl));
     }
@@ -1715,7 +1787,7 @@ type User {
     }
     float score = 11;
     map<string, string> metadata = 12;
-    @reserved(13)
+    reserved 13;
 }
 
 type PublicUser = Pick<User, id, email, name>;
@@ -1726,8 +1798,6 @@ enum OrderStatus {
     Pending = 1;
     Processing = 2;
     Completed = 3;
-    @removed(fallback=Completed)
-    Delivered = 4;
     Cancelled = 5;
 }
 

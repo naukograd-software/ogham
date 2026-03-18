@@ -1,0 +1,194 @@
+package shipment;
+
+// ============================================================================
+// Shipment tracking and delivery.
+// Demonstrates: projections (simple, renamed, nested, wildcard, multi-source,
+// chain), oneof with projections, optional from oneof, Pick, Omit,
+// import alias, stream RPCs.
+// ============================================================================
+
+import github.com/oghamlang/std/uuid;
+import github.com/oghamlang/std/time;
+import github.com/oghamlang/std/money;
+import github.com/oghamlang/std/geo;
+import github.com/oghamlang/examples/golden/common;
+
+// ── Core types ──────────────────────────────────────────────────────────
+
+enum ShipmentStatus {
+    Created = 1;
+    PickedUp = 2;
+    InTransit = 3;
+    OutForDelivery = 4;
+    Delivered = 5;
+    Failed = 6;
+    Returned = 8;
+    Cancelled = 9;
+}
+
+enum PackageSize {
+    Small = 1;
+    Medium = 2;
+    Large = 3;
+    Oversized = 4;
+}
+
+type Package {
+    uuid.UUID id = 1;
+    common.Dimensions dimensions = 2;
+    PackageSize size = 3;
+    common.IsFragile fragile = 4;
+    common.Barcode? barcode = 5;
+    string? contents_description = 6;
+    money.Money? declared_value = 7;
+}
+
+type Shipment {
+    common.BaseModel(1..4)
+    common.TrackingNumber tracking_number = 5;
+    ShipmentStatus status = 6;
+
+    // Origin and destination
+    common.Address origin = 7;
+    common.ContactInfo sender = 8;
+    common.Address destination = 9;
+    common.ContactInfo receiver = 10;
+
+    []Package packages = 11;
+
+    // Delivery details
+    oneof delivery_method {
+        StandardDelivery standard = 12;
+        ExpressDelivery express = 13;
+        ScheduledDelivery scheduled = 14;
+    }
+
+    // Costs
+    money.Money shipping_cost = 15;
+    money.Money? insurance_cost = 16;
+
+    // Assignment
+    uuid.UUID? vehicle_id = 17;
+    uuid.UUID? driver_id = 18;
+
+    []TrackingEvent history = 19;
+    common.Metadata? metadata = 20;
+}
+
+type StandardDelivery {
+    common.TimeWindow estimated_window = 1;
+    int32 max_business_days = 2;
+}
+
+type ExpressDelivery {
+    time.Timestamp guaranteed_by = 1;
+    string priority_code = 2;
+    money.Money surcharge = 3;
+}
+
+type ScheduledDelivery {
+    common.TimeWindow requested_window = 1;
+    bool signature_required = 2;
+    string? delivery_instructions = 3;
+}
+
+// ── Tracking events ─────────────────────────────────────────────────────
+
+type TrackingEvent {
+    uuid.UUID id = 1;
+    time.Timestamp timestamp = 2;
+    ShipmentStatus status = 3;
+    string description = 4;
+    geo.LatLng? location = 5;
+    string? facility_name = 6;
+}
+
+// ── Additional source for multi-source projection ───────────────────────
+
+type ShipmentMetrics {
+    common.TrackingNumber tracking_number = 1;
+    int64 distance_km = 2;
+    int64 transit_time_hours = 3;
+    int32 stop_count = 4;
+}
+
+// ============================================================================
+// PROJECTIONS — field mappings between types
+// ============================================================================
+
+// 1. Simple projection — pick and rename fields
+type ShipmentSummary {
+    common.TrackingNumber tracking_number = 1 <- Shipment.tracking_number;
+    ShipmentStatus status = 2 <- Shipment.status;
+    money.Money cost = 3 <- Shipment.shipping_cost;      // renamed
+    time.Timestamp created = 4 <- Shipment.created_at;   // renamed
+}
+
+// 2. Nested field mapping — flatten address into shipment row
+type ShipmentFlatRow {
+    common.TrackingNumber tracking_number = 1 <- Shipment.tracking_number;
+    string origin_city = 2 <- Shipment.origin.city;
+    string origin_country = 3 <- Shipment.origin.country_code;
+    string dest_city = 4 <- Shipment.destination.city;
+    string dest_country = 5 <- Shipment.destination.country_code;
+    string sender_name = 6 <- Shipment.sender.name;
+    string receiver_name = 7 <- Shipment.receiver.name;
+}
+
+// 3. Wildcard projection — extract common fields from oneof variants
+type DeliveryCostView {
+    common.TrackingNumber tracking_number = 1 <- Shipment.tracking_number;
+    // All delivery methods have different structures, but we can extract surcharge from express
+    oneof delivery_detail {
+        int32 max_days = 2 <- Shipment.delivery_method.standard.max_business_days;
+        string priority = 3 <- Shipment.delivery_method.express.priority_code;
+        bool needs_signature = 4 <- Shipment.delivery_method.scheduled.signature_required;
+    }
+}
+
+// 4. Oneof into optional fields
+type DeliveryFlat {
+    common.TrackingNumber tracking_number = 1 <- Shipment.tracking_number;
+    StandardDelivery? standard = 2 <- Shipment.delivery_method.standard;
+    ExpressDelivery? express = 3 <- Shipment.delivery_method.express;
+    ScheduledDelivery? scheduled = 4 <- Shipment.delivery_method.scheduled;
+}
+
+// 5. Multi-source projection — combine shipment + metrics
+type ShipmentDashboard {
+    common.TrackingNumber tracking_number = 1 <- Shipment.tracking_number;
+    ShipmentStatus status = 2 <- Shipment.status;
+    string receiver_name = 3 <- Shipment.receiver.name;
+    int64 distance_km = 4 <- ShipmentMetrics.distance_km;
+    int64 transit_hours = 5 <- ShipmentMetrics.transit_time_hours;
+    int32 stops = 6 <- ShipmentMetrics.stop_count;
+}
+
+// 6. New fields without source mapping (mixed projection)
+type ShipmentSearch {
+    common.TrackingNumber tracking_number = 1 <- Shipment.tracking_number;
+    string sender_name = 2 <- Shipment.sender.name;
+    string receiver_name = 3 <- Shipment.receiver.name;
+    string search_text = 4;                // plugin-computed, no source mapping
+    float relevance_score = 5;             // plugin-computed
+}
+
+// 7. Projection chain — ShipmentCard references ShipmentSummary
+type ShipmentCard {
+    common.TrackingNumber tracking_number = 1 <- ShipmentSummary.tracking_number;
+    ShipmentStatus status = 2 <- ShipmentSummary.status;
+    // chain: ShipmentCard.tracking_number <- ShipmentSummary.tracking_number <- Shipment.tracking_number
+}
+
+// ============================================================================
+// Pick and Omit
+// ============================================================================
+
+// Pick — select specific fields by name
+type ShipmentPublic = Pick<Shipment, tracking_number, status, destination, receiver>;
+
+// Omit — exclude specific fields by name
+type ShipmentWithoutCosts = Omit<Shipment, shipping_cost, insurance_cost>;
+
+// Omit by shape — remove all fields matching the AuditFields shape (created_at, updated_at)
+type ShipmentNoAudit = Omit<Shipment, common.AuditFields>;

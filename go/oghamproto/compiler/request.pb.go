@@ -84,7 +84,10 @@ type OghamCompileRequest struct {
 	// Plugin options from ogham.gen.yaml `opts` section.
 	Options map[string]string `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Output directory specified in ogham.gen.yaml.
-	OutputDir     string `protobuf:"bytes,4,opt,name=output_dir,json=outputDir,proto3" json:"output_dir,omitempty"`
+	OutputDir string `protobuf:"bytes,4,opt,name=output_dir,json=outputDir,proto3" json:"output_dir,omitempty"`
+	// Module path from ogham.mod.yaml, e.g. "github.com/org/dashboard".
+	// Used by plugins to compute import paths (module_path + "/" + out).
+	ModulePath    string `protobuf:"bytes,5,opt,name=module_path,json=modulePath,proto3" json:"module_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -143,6 +146,13 @@ func (x *OghamCompileRequest) GetOptions() map[string]string {
 func (x *OghamCompileRequest) GetOutputDir() string {
 	if x != nil {
 		return x.OutputDir
+	}
+	return ""
+}
+
+func (x *OghamCompileRequest) GetModulePath() string {
+	if x != nil {
+		return x.ModulePath
 	}
 	return ""
 }
@@ -338,13 +348,15 @@ var File_oghamproto_compiler_request_proto protoreflect.FileDescriptor
 
 const file_oghamproto_compiler_request_proto_rawDesc = "" +
 	"\n" +
-	"!oghamproto/compiler/request.proto\x12\x13oghamproto.compiler\x1a\x19oghamproto/ir/types.proto\"\x9b\x02\n" +
+	"!oghamproto/compiler/request.proto\x12\x13oghamproto.compiler\x1a\x19oghamproto/ir/types.proto\"\xbc\x02\n" +
 	"\x13OghamCompileRequest\x12)\n" +
 	"\x10compiler_version\x18\x01 \x01(\tR\x0fcompilerVersion\x12-\n" +
 	"\x06module\x18\x02 \x01(\v2\x15.oghamproto.ir.ModuleR\x06module\x12O\n" +
 	"\aoptions\x18\x03 \x03(\v25.oghamproto.compiler.OghamCompileRequest.OptionsEntryR\aoptions\x12\x1d\n" +
 	"\n" +
-	"output_dir\x18\x04 \x01(\tR\toutputDir\x1a:\n" +
+	"output_dir\x18\x04 \x01(\tR\toutputDir\x12\x1f\n" +
+	"\vmodule_path\x18\x05 \x01(\tR\n" +
+	"modulePath\x1a:\n" +
 	"\fOptionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8b\x01\n" +

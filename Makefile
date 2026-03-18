@@ -38,6 +38,7 @@ test-ts: # Run TypeScript tests
 .PHONY: build
 build: # Build all binaries into ./bin/
 	cargo build --release
+	cd go && go build -o ../bin/ogham-gen-go ./ogham-gen-go/
 	@mkdir -p bin
 	@cp target/release/ogham bin/ 2>/dev/null || true
 	@cp target/release/ogham-lsp bin/ 2>/dev/null || true
@@ -50,6 +51,15 @@ install: build # Build and copy binaries to $$OGHAM_BIN or ~/.ogham/bin
 	@mkdir -p $${OGHAM_BIN:-$$HOME/.ogham/bin}
 	@cp bin/* $${OGHAM_BIN:-$$HOME/.ogham/bin}/
 	@echo "Installed to $${OGHAM_BIN:-$$HOME/.ogham/bin}"
+
+.PHONY: example
+example: build # Generate Go and Proto code for examples/store, then run protoc-gen-go
+	./bin/ogham generate --dir examples/store
+	protoc \
+		--proto_path=examples/store/gen/proto \
+		--go_out=examples/store/gen/pbgo \
+		--go_opt=paths=source_relative \
+		examples/store/gen/proto/*.proto
 
 .PHONY: ci
 ci: fmt clippy test # Run formatting, lints, and all tests (Rust + Go + TS)

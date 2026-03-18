@@ -1,0 +1,11 @@
+module: github.com/oghamlang/examples/golden
+version: 0.1.0
+ogham: ">= 0.1.0"
+description: Golden example — logistics system API showcasing every Ogham language construct
+
+require:
+  github.com/oghamlang/std: ^0.1.0
+
+breaking:
+  against: git:main
+  policy: warn

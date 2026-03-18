@@ -1,0 +1,150 @@
+package order;
+
+// ============================================================================
+// Order management — customer orders and fulfillment.
+// Demonstrates: references between packages, generic type usage,
+// annotation calls with all param types, @common::Pipeline with
+// inline nested annotation types.
+// ============================================================================
+
+import github.com/oghamlang/std/uuid;
+import github.com/oghamlang/std/time;
+import github.com/oghamlang/std/money;
+import github.com/oghamlang/std/validate;
+import github.com/oghamlang/examples/golden/common;
+
+// ── Order ───────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+    Pending = 1;
+    Confirmed = 2;
+    Processing = 3;
+    ReadyToShip = 4;
+    Shipped = 5;
+    Delivered = 6;
+    Cancelled = 7;
+}
+
+enum PaymentMethod {
+    CreditCard = 1;
+    BankTransfer = 2;
+    CashOnDelivery = 3;
+    Wallet = 4;
+}
+
+@common::Table(table_name="orders", schema="logistics", partitioned=true)
+@common::Pipeline(
+    pipeline_name="order-fulfillment",
+    async=true,
+    env={region:"eu-west-1", tier:"production"},
+    retry={max_retries:3, backoff_ms:1000},
+    dead_letter={
+        topic="orders.dlq",
+        max_age_hours=72,
+        alert_config={
+            channel="#ops-alerts",
+            enabled=true
+        }
+    }
+)
+type Order {
+    common.BaseModel(1..4)
+
+    @common::Column(column_name="order_number", indexed=true)
+    @validate::NotEmpty()
+    string order_number = 5;
+
+    OrderStatus status = 6;
+
+    // Customer info (inline, no separate Customer type needed)
+    string customer_id = 7;
+    string customer_name = 8;
+    common.ContactInfo customer_contact = 9;
+
+    // Addresses
+    common.Address billing_address = 10;
+    common.Address shipping_address = 11;
+
+    // Line items
+    @validate::Items(min=1, unique=false)
+    []LineItem items = 12;
+
+    // Payment
+    PaymentMethod payment_method = 13;
+    oneof payment_details {
+        CardPayment card = 14;
+        BankPayment bank = 15;
+    }
+
+    // Totals
+    money.Money subtotal = 16;
+    money.Money? tax = 17;
+    money.Money? discount = 18;
+    money.Money total = 19;
+
+    // Fulfillment
+    uuid.UUID? warehouse_id = 20;
+    common.TrackingNumber? tracking_number = 21;
+
+    common.Metadata? metadata = 22;
+    reserved 23, 24;
+}
+
+type LineItem {
+    uuid.UUID id = 1;
+    string sku = 2;
+    string product_name = 3;
+    int32 quantity = 4;
+    money.Money unit_price = 5;
+    money.Money line_total = 6;
+    common.WeightKg? weight = 7;
+}
+
+type CardPayment {
+    string transaction_id = 1;
+    string last_four = 2;
+    string card_brand = 3;
+    time.Timestamp authorized_at = 4;
+}
+
+type BankPayment {
+    string transaction_id = 1;
+    string iban = 2;
+    string swift_code = 3;
+    time.Timestamp settled_at = 4;
+}
+
+// ── Projections ─────────────────────────────────────────────────────────
+
+// Wildcard projection — common field from all oneof variants
+type OrderPaymentFlat {
+    string order_number = 1 <- Order.order_number;
+    string transaction_id = 2 <- Order.payment_details.*.transaction_id;
+    oneof method_detail {
+        string card_brand = 3 <- Order.payment_details.card.card_brand;
+        string iban = 4 <- Order.payment_details.bank.iban;
+    }
+}
+
+// Flatten billing address
+type OrderRow {
+    string order_number = 1 <- Order.order_number;
+    string customer_name = 2 <- Order.customer_name;
+    string billing_city = 3 <- Order.billing_address.city;
+    string billing_country = 4 <- Order.billing_address.country_code;
+    string shipping_city = 5 <- Order.shipping_address.city;
+    string shipping_country = 6 <- Order.shipping_address.country_code;
+}
+
+// ── Generic type instantiation ──────────────────────────────────────────
+
+type PaginatedOrders {
+    common.Paginated<Order>(1..1)
+    int32 total_count = 2;
+    string next_page_token = 3;
+}
+
+// ── Pick / Omit ─────────────────────────────────────────────────────────
+
+type OrderPublic = Pick<Order, order_number, status, total, tracking_number>;
+type OrderWithoutPayment = Omit<Order, payment_method, payment_details>;

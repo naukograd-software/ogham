@@ -1,0 +1,109 @@
+package warehouse;
+
+// ============================================================================
+// Warehouse and inventory management.
+// Demonstrates: annotation usage on types/fields/enums/enum_values,
+// generic type instantiation, std library types (decimal, money, geo),
+// oneof with projections, reserved.
+// ============================================================================
+
+import github.com/oghamlang/std/uuid;
+import github.com/oghamlang/std/time;
+import github.com/oghamlang/std/decimal;
+import github.com/oghamlang/std/validate;
+import github.com/oghamlang/examples/golden/common;
+
+// ── Warehouse ───────────────────────────────────────────────────────────
+
+@common::Table(table_name="warehouses", schema="logistics")
+type Warehouse {
+    common.BaseModel(1..4)
+
+    @common::Column(column_name="code", indexed=true)
+    @validate::Length(min=3, max=10)
+    string code = 5;
+
+    @common::Column(column_name="name")
+    string name = 6;
+
+    common.Address address = 7;
+    common.ContactInfo manager = 8;
+    double capacity_cubic_m = 9;
+    double used_cubic_m = 10;
+
+    // Nested type for warehouse zones
+    type Zone {
+        string zone_id = 1;
+        string name = 2;
+
+        enum ZoneTemperature {
+            Ambient = 1;
+            Chilled = 2;
+            Frozen = 3;
+        }
+        ZoneTemperature temperature = 3;
+        double capacity_cubic_m = 4;
+    }
+
+    []Zone zones = 11;
+    bool active = 12;
+    map<string, string> operating_hours = 13;
+    reserved 14;
+}
+
+// ── Inventory ───────────────────────────────────────────────────────────
+
+enum InventoryStatus {
+    InStock = 1;
+    Reserved = 2;
+    Damaged = 3;
+    InTransit = 4;
+}
+
+@common::Table(table_name="inventory")
+type InventoryItem {
+    common.BaseModel(1..4)
+
+    @common::Column(column_name="sku", indexed=true)
+    @validate::NotEmpty()
+    string sku = 5;
+
+    string name = 6;
+    string? description = 7;
+    common.Dimensions dimensions = 8;
+    common.IsFragile is_fragile = 9;
+    common.Barcode? barcode = 10;
+    decimal.Decimal unit_cost = 11;
+
+    @validate::Range(min=0)
+    int32 quantity = 12;
+
+    InventoryStatus status = 13;
+    uuid.UUID warehouse_id = 14;
+    string? zone_id = 15;
+
+    // Map of lot number -> quantity for batch tracking
+    map<string, int32> lot_quantities = 16;
+    common.Metadata? metadata = 17;
+}
+
+// ── Stock movement ──────────────────────────────────────────────────────
+
+enum MovementType {
+    Inbound = 1;
+    Outbound = 2;
+    Transfer = 3;
+    Adjustment = 4;
+}
+
+type StockMovement {
+    uuid.UUID id = 1;
+    time.Timestamp timestamp = 2;
+    MovementType movement_type = 3;
+    string sku = 4;
+    int32 quantity = 5;
+    uuid.UUID? from_warehouse_id = 6;
+    uuid.UUID? to_warehouse_id = 7;
+    string reason = 8;
+    uuid.UUID performed_by = 9;
+}

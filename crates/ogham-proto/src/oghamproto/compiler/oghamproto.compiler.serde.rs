@@ -294,6 +294,9 @@ impl serde::Serialize for OghamCompileRequest {
         if !self.output_dir.is_empty() {
             len += 1;
         }
+        if !self.module_path.is_empty() {
+            len += 1;
+        }
         let mut struct_ser = serializer.serialize_struct("oghamproto.compiler.OghamCompileRequest", len)?;
         if !self.compiler_version.is_empty() {
             struct_ser.serialize_field("compilerVersion", &self.compiler_version)?;
@@ -306,6 +309,9 @@ impl serde::Serialize for OghamCompileRequest {
         }
         if !self.output_dir.is_empty() {
             struct_ser.serialize_field("outputDir", &self.output_dir)?;
+        }
+        if !self.module_path.is_empty() {
+            struct_ser.serialize_field("modulePath", &self.module_path)?;
         }
         struct_ser.end()
     }
@@ -323,6 +329,8 @@ impl<'de> serde::Deserialize<'de> for OghamCompileRequest {
             "options",
             "output_dir",
             "outputDir",
+            "module_path",
+            "modulePath",
         ];
 
         #[allow(clippy::enum_variant_names)]
@@ -331,6 +339,7 @@ impl<'de> serde::Deserialize<'de> for OghamCompileRequest {
             Module,
             Options,
             OutputDir,
+            ModulePath,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -356,6 +365,7 @@ impl<'de> serde::Deserialize<'de> for OghamCompileRequest {
                             "module" => Ok(GeneratedField::Module),
                             "options" => Ok(GeneratedField::Options),
                             "outputDir" | "output_dir" => Ok(GeneratedField::OutputDir),
+                            "modulePath" | "module_path" => Ok(GeneratedField::ModulePath),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -379,6 +389,7 @@ impl<'de> serde::Deserialize<'de> for OghamCompileRequest {
                 let mut module__ = None;
                 let mut options__ = None;
                 let mut output_dir__ = None;
+                let mut module_path__ = None;
                 while let Some(k) = map_.next_key()? {
                     match k {
                         GeneratedField::CompilerVersion => {
@@ -407,6 +418,12 @@ impl<'de> serde::Deserialize<'de> for OghamCompileRequest {
                             }
                             output_dir__ = Some(map_.next_value()?);
                         }
+                        GeneratedField::ModulePath => {
+                            if module_path__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("modulePath"));
+                            }
+                            module_path__ = Some(map_.next_value()?);
+                        }
                     }
                 }
                 Ok(OghamCompileRequest {
@@ -414,6 +431,7 @@ impl<'de> serde::Deserialize<'de> for OghamCompileRequest {
                     module: module__,
                     options: options__.unwrap_or_default(),
                     output_dir: output_dir__.unwrap_or_default(),
+                    module_path: module_path__.unwrap_or_default(),
                 })
             }
         }

@@ -104,6 +104,76 @@ func (ScalarKind) EnumDescriptor() ([]byte, []int) {
 	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{0}
 }
 
+// Origin module of a type/enum/service.
+// Carried inline on each declaration for direct access without lookups.
+type ModuleInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ModulePath    string                 `protobuf:"bytes,1,opt,name=module_path,json=modulePath,proto3" json:"module_path,omitempty"` // "github.com/org/billing" from ogham.mod.yaml
+	Package       string                 `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`                         // "billing" — ogham package name
+	Version       string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`                         // "1.0.0"
+	Generate      bool                   `protobuf:"varint,4,opt,name=generate,proto3" json:"generate,omitempty"`                      // true = own module, false = dependency
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModuleInfo) Reset() {
+	*x = ModuleInfo{}
+	mi := &file_oghamproto_ir_types_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModuleInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModuleInfo) ProtoMessage() {}
+
+func (x *ModuleInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_oghamproto_ir_types_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModuleInfo.ProtoReflect.Descriptor instead.
+func (*ModuleInfo) Descriptor() ([]byte, []int) {
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ModuleInfo) GetModulePath() string {
+	if x != nil {
+		return x.ModulePath
+	}
+	return ""
+}
+
+func (x *ModuleInfo) GetPackage() string {
+	if x != nil {
+		return x.Package
+	}
+	return ""
+}
+
+func (x *ModuleInfo) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *ModuleInfo) GetGenerate() bool {
+	if x != nil {
+		return x.Generate
+	}
+	return false
+}
+
 // Fully resolved module — the output of the compiler's AST → IR lowering.
 // Everything is inline; plugins never need to resolve references.
 type Module struct {
@@ -118,7 +188,7 @@ type Module struct {
 
 func (x *Module) Reset() {
 	*x = Module{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[0]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -130,7 +200,7 @@ func (x *Module) String() string {
 func (*Module) ProtoMessage() {}
 
 func (x *Module) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[0]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -143,7 +213,7 @@ func (x *Module) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Module.ProtoReflect.Descriptor instead.
 func (*Module) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{0}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Module) GetPackage() string {
@@ -186,13 +256,14 @@ type Type struct {
 	BackReferences []*TypeBackRef         `protobuf:"bytes,8,rep,name=back_references,json=backReferences,proto3" json:"back_references,omitempty"` // types that reference this type
 	Trace          *TypeTrace             `protobuf:"bytes,9,opt,name=trace,proto3" json:"trace,omitempty"`                                         // origin trace
 	Location       *common.SourceLocation `protobuf:"bytes,10,opt,name=location,proto3" json:"location,omitempty"`
+	Module         *ModuleInfo            `protobuf:"bytes,16,opt,name=module,proto3" json:"module,omitempty"` // origin module of this type
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Type) Reset() {
 	*x = Type{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[1]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -204,7 +275,7 @@ func (x *Type) String() string {
 func (*Type) ProtoMessage() {}
 
 func (x *Type) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[1]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -217,7 +288,7 @@ func (x *Type) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Type.ProtoReflect.Descriptor instead.
 func (*Type) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{1}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Type) GetName() string {
@@ -290,6 +361,13 @@ func (x *Type) GetLocation() *common.SourceLocation {
 	return nil
 }
 
+func (x *Type) GetModule() *ModuleInfo {
+	if x != nil {
+		return x.Module
+	}
+	return nil
+}
+
 type Field struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -307,7 +385,7 @@ type Field struct {
 
 func (x *Field) Reset() {
 	*x = Field{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[2]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -319,7 +397,7 @@ func (x *Field) String() string {
 func (*Field) ProtoMessage() {}
 
 func (x *Field) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[2]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -332,7 +410,7 @@ func (x *Field) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Field.ProtoReflect.Descriptor instead.
 func (*Field) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{2}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Field) GetName() string {
@@ -410,7 +488,7 @@ type OneofGroup struct {
 
 func (x *OneofGroup) Reset() {
 	*x = OneofGroup{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[3]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -422,7 +500,7 @@ func (x *OneofGroup) String() string {
 func (*OneofGroup) ProtoMessage() {}
 
 func (x *OneofGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[3]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -435,7 +513,7 @@ func (x *OneofGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OneofGroup.ProtoReflect.Descriptor instead.
 func (*OneofGroup) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{3}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *OneofGroup) GetName() string {
@@ -480,7 +558,7 @@ type OneofField struct {
 
 func (x *OneofField) Reset() {
 	*x = OneofField{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[4]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -492,7 +570,7 @@ func (x *OneofField) String() string {
 func (*OneofField) ProtoMessage() {}
 
 func (x *OneofField) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[4]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -505,7 +583,7 @@ func (x *OneofField) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OneofField.ProtoReflect.Descriptor instead.
 func (*OneofField) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{4}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *OneofField) GetName() string {
@@ -557,13 +635,14 @@ type Enum struct {
 	Values        []*EnumValue           `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"` // includes implicit Unspecified=0
 	Annotations   []*AnnotationCall      `protobuf:"bytes,4,rep,name=annotations,proto3" json:"annotations,omitempty"`
 	Location      *common.SourceLocation `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
+	Module        *ModuleInfo            `protobuf:"bytes,6,opt,name=module,proto3" json:"module,omitempty"` // origin module of this enum
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Enum) Reset() {
 	*x = Enum{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[5]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +654,7 @@ func (x *Enum) String() string {
 func (*Enum) ProtoMessage() {}
 
 func (x *Enum) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[5]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +667,7 @@ func (x *Enum) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Enum.ProtoReflect.Descriptor instead.
 func (*Enum) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{5}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Enum) GetName() string {
@@ -626,6 +705,13 @@ func (x *Enum) GetLocation() *common.SourceLocation {
 	return nil
 }
 
+func (x *Enum) GetModule() *ModuleInfo {
+	if x != nil {
+		return x.Module
+	}
+	return nil
+}
+
 type EnumValue struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -640,7 +726,7 @@ type EnumValue struct {
 
 func (x *EnumValue) Reset() {
 	*x = EnumValue{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[6]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -652,7 +738,7 @@ func (x *EnumValue) String() string {
 func (*EnumValue) ProtoMessage() {}
 
 func (x *EnumValue) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[6]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -665,7 +751,7 @@ func (x *EnumValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnumValue.ProtoReflect.Descriptor instead.
 func (*EnumValue) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{6}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EnumValue) GetName() string {
@@ -717,13 +803,14 @@ type Service struct {
 	Rpcs          []*Rpc                 `protobuf:"bytes,3,rep,name=rpcs,proto3" json:"rpcs,omitempty"`
 	Annotations   []*AnnotationCall      `protobuf:"bytes,4,rep,name=annotations,proto3" json:"annotations,omitempty"`
 	Location      *common.SourceLocation `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
+	Module        *ModuleInfo            `protobuf:"bytes,6,opt,name=module,proto3" json:"module,omitempty"` // origin module of this service
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Service) Reset() {
 	*x = Service{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[7]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -735,7 +822,7 @@ func (x *Service) String() string {
 func (*Service) ProtoMessage() {}
 
 func (x *Service) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[7]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -748,7 +835,7 @@ func (x *Service) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Service.ProtoReflect.Descriptor instead.
 func (*Service) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{7}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Service) GetName() string {
@@ -786,6 +873,13 @@ func (x *Service) GetLocation() *common.SourceLocation {
 	return nil
 }
 
+func (x *Service) GetModule() *ModuleInfo {
+	if x != nil {
+		return x.Module
+	}
+	return nil
+}
+
 type Rpc struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -799,7 +893,7 @@ type Rpc struct {
 
 func (x *Rpc) Reset() {
 	*x = Rpc{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[8]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -811,7 +905,7 @@ func (x *Rpc) String() string {
 func (*Rpc) ProtoMessage() {}
 
 func (x *Rpc) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[8]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -824,7 +918,7 @@ func (x *Rpc) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Rpc.ProtoReflect.Descriptor instead.
 func (*Rpc) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{8}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Rpc) GetName() string {
@@ -873,7 +967,7 @@ type RpcParam struct {
 
 func (x *RpcParam) Reset() {
 	*x = RpcParam{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[9]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -885,7 +979,7 @@ func (x *RpcParam) String() string {
 func (*RpcParam) ProtoMessage() {}
 
 func (x *RpcParam) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[9]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -898,7 +992,7 @@ func (x *RpcParam) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RpcParam.ProtoReflect.Descriptor instead.
 func (*RpcParam) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{9}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RpcParam) GetIsVoid() bool {
@@ -937,7 +1031,7 @@ type TypeReference struct {
 
 func (x *TypeReference) Reset() {
 	*x = TypeReference{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[10]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -949,7 +1043,7 @@ func (x *TypeReference) String() string {
 func (*TypeReference) ProtoMessage() {}
 
 func (x *TypeReference) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[10]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -962,7 +1056,7 @@ func (x *TypeReference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TypeReference.ProtoReflect.Descriptor instead.
 func (*TypeReference) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{10}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *TypeReference) GetKind() isTypeReference_Kind {
@@ -1046,7 +1140,7 @@ type ScalarType struct {
 
 func (x *ScalarType) Reset() {
 	*x = ScalarType{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[11]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1058,7 +1152,7 @@ func (x *ScalarType) String() string {
 func (*ScalarType) ProtoMessage() {}
 
 func (x *ScalarType) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[11]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1071,7 +1165,7 @@ func (x *ScalarType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScalarType.ProtoReflect.Descriptor instead.
 func (*ScalarType) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{11}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ScalarType) GetScalarKind() ScalarKind {
@@ -1096,7 +1190,7 @@ type MessageType struct {
 
 func (x *MessageType) Reset() {
 	*x = MessageType{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[12]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1108,7 +1202,7 @@ func (x *MessageType) String() string {
 func (*MessageType) ProtoMessage() {}
 
 func (x *MessageType) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[12]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1121,7 +1215,7 @@ func (x *MessageType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageType.ProtoReflect.Descriptor instead.
 func (*MessageType) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{12}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *MessageType) GetName() string {
@@ -1178,7 +1272,7 @@ type EnumType struct {
 
 func (x *EnumType) Reset() {
 	*x = EnumType{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[13]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1190,7 +1284,7 @@ func (x *EnumType) String() string {
 func (*EnumType) ProtoMessage() {}
 
 func (x *EnumType) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[13]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1203,7 +1297,7 @@ func (x *EnumType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnumType.ProtoReflect.Descriptor instead.
 func (*EnumType) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{13}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *EnumType) GetName() string {
@@ -1237,7 +1331,7 @@ type MapType struct {
 
 func (x *MapType) Reset() {
 	*x = MapType{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[14]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1249,7 +1343,7 @@ func (x *MapType) String() string {
 func (*MapType) ProtoMessage() {}
 
 func (x *MapType) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[14]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1262,7 +1356,7 @@ func (x *MapType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapType.ProtoReflect.Descriptor instead.
 func (*MapType) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{14}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *MapType) GetKey() *TypeReference {
@@ -1292,7 +1386,7 @@ type AnnotationCall struct {
 
 func (x *AnnotationCall) Reset() {
 	*x = AnnotationCall{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[15]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1304,7 +1398,7 @@ func (x *AnnotationCall) String() string {
 func (*AnnotationCall) ProtoMessage() {}
 
 func (x *AnnotationCall) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[15]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1317,7 +1411,7 @@ func (x *AnnotationCall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationCall.ProtoReflect.Descriptor instead.
 func (*AnnotationCall) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{15}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AnnotationCall) GetLibrary() string {
@@ -1365,7 +1459,7 @@ type AnnotationArgument struct {
 
 func (x *AnnotationArgument) Reset() {
 	*x = AnnotationArgument{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[16]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1377,7 +1471,7 @@ func (x *AnnotationArgument) String() string {
 func (*AnnotationArgument) ProtoMessage() {}
 
 func (x *AnnotationArgument) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[16]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1390,7 +1484,7 @@ func (x *AnnotationArgument) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationArgument.ProtoReflect.Descriptor instead.
 func (*AnnotationArgument) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{16}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AnnotationArgument) GetName() string {
@@ -1424,7 +1518,7 @@ type AnnotationLiteral struct {
 
 func (x *AnnotationLiteral) Reset() {
 	*x = AnnotationLiteral{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[17]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1436,7 +1530,7 @@ func (x *AnnotationLiteral) String() string {
 func (*AnnotationLiteral) ProtoMessage() {}
 
 func (x *AnnotationLiteral) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[17]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1449,7 +1543,7 @@ func (x *AnnotationLiteral) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationLiteral.ProtoReflect.Descriptor instead.
 func (*AnnotationLiteral) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{17}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *AnnotationLiteral) GetValue() isAnnotationLiteral_Value {
@@ -1562,7 +1656,7 @@ type AnnotationStruct struct {
 
 func (x *AnnotationStruct) Reset() {
 	*x = AnnotationStruct{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[18]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1574,7 +1668,7 @@ func (x *AnnotationStruct) String() string {
 func (*AnnotationStruct) ProtoMessage() {}
 
 func (x *AnnotationStruct) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[18]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1587,7 +1681,7 @@ func (x *AnnotationStruct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationStruct.ProtoReflect.Descriptor instead.
 func (*AnnotationStruct) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{18}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *AnnotationStruct) GetFields() map[string]*AnnotationLiteral {
@@ -1606,7 +1700,7 @@ type AnnotationList struct {
 
 func (x *AnnotationList) Reset() {
 	*x = AnnotationList{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[19]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1618,7 +1712,7 @@ func (x *AnnotationList) String() string {
 func (*AnnotationList) ProtoMessage() {}
 
 func (x *AnnotationList) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[19]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1631,7 +1725,7 @@ func (x *AnnotationList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationList.ProtoReflect.Descriptor instead.
 func (*AnnotationList) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{19}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *AnnotationList) GetValues() []*AnnotationLiteral {
@@ -1655,7 +1749,7 @@ type AnnotationDefinition struct {
 
 func (x *AnnotationDefinition) Reset() {
 	*x = AnnotationDefinition{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[20]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1667,7 +1761,7 @@ func (x *AnnotationDefinition) String() string {
 func (*AnnotationDefinition) ProtoMessage() {}
 
 func (x *AnnotationDefinition) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[20]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1680,7 +1774,7 @@ func (x *AnnotationDefinition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationDefinition.ProtoReflect.Descriptor instead.
 func (*AnnotationDefinition) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{20}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *AnnotationDefinition) GetLibrary() string {
@@ -1730,7 +1824,7 @@ type AnnotationParameter struct {
 
 func (x *AnnotationParameter) Reset() {
 	*x = AnnotationParameter{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[21]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1742,7 +1836,7 @@ func (x *AnnotationParameter) String() string {
 func (*AnnotationParameter) ProtoMessage() {}
 
 func (x *AnnotationParameter) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[21]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1755,7 +1849,7 @@ func (x *AnnotationParameter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationParameter.ProtoReflect.Descriptor instead.
 func (*AnnotationParameter) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{21}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *AnnotationParameter) GetName() string {
@@ -1798,7 +1892,7 @@ type AnnotationCompositionRef struct {
 
 func (x *AnnotationCompositionRef) Reset() {
 	*x = AnnotationCompositionRef{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[22]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1810,7 +1904,7 @@ func (x *AnnotationCompositionRef) String() string {
 func (*AnnotationCompositionRef) ProtoMessage() {}
 
 func (x *AnnotationCompositionRef) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[22]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1823,7 +1917,7 @@ func (x *AnnotationCompositionRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnnotationCompositionRef.ProtoReflect.Descriptor instead.
 func (*AnnotationCompositionRef) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{22}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *AnnotationCompositionRef) GetLibrary() string {
@@ -1860,7 +1954,7 @@ type FieldMapping struct {
 
 func (x *FieldMapping) Reset() {
 	*x = FieldMapping{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[23]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1872,7 +1966,7 @@ func (x *FieldMapping) String() string {
 func (*FieldMapping) ProtoMessage() {}
 
 func (x *FieldMapping) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[23]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1885,7 +1979,7 @@ func (x *FieldMapping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FieldMapping.ProtoReflect.Descriptor instead.
 func (*FieldMapping) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{23}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *FieldMapping) GetChain() []*MappingLink {
@@ -1910,7 +2004,7 @@ type MappingLink struct {
 
 func (x *MappingLink) Reset() {
 	*x = MappingLink{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[24]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1922,7 +2016,7 @@ func (x *MappingLink) String() string {
 func (*MappingLink) ProtoMessage() {}
 
 func (x *MappingLink) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[24]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1935,7 +2029,7 @@ func (x *MappingLink) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MappingLink.ProtoReflect.Descriptor instead.
 func (*MappingLink) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{24}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *MappingLink) GetSourceTypeName() string {
@@ -1994,7 +2088,7 @@ type TypeTrace struct {
 
 func (x *TypeTrace) Reset() {
 	*x = TypeTrace{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[25]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2006,7 +2100,7 @@ func (x *TypeTrace) String() string {
 func (*TypeTrace) ProtoMessage() {}
 
 func (x *TypeTrace) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[25]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2019,7 +2113,7 @@ func (x *TypeTrace) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TypeTrace.ProtoReflect.Descriptor instead.
 func (*TypeTrace) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{25}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *TypeTrace) GetOrigin() isTypeTrace_Origin {
@@ -2073,7 +2167,7 @@ type GenericOrigin struct {
 
 func (x *GenericOrigin) Reset() {
 	*x = GenericOrigin{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[26]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2085,7 +2179,7 @@ func (x *GenericOrigin) String() string {
 func (*GenericOrigin) ProtoMessage() {}
 
 func (x *GenericOrigin) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[26]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2098,7 +2192,7 @@ func (x *GenericOrigin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GenericOrigin.ProtoReflect.Descriptor instead.
 func (*GenericOrigin) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{26}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GenericOrigin) GetSourceName() string {
@@ -2126,7 +2220,7 @@ type PickOmitOrigin struct {
 
 func (x *PickOmitOrigin) Reset() {
 	*x = PickOmitOrigin{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[27]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2138,7 +2232,7 @@ func (x *PickOmitOrigin) String() string {
 func (*PickOmitOrigin) ProtoMessage() {}
 
 func (x *PickOmitOrigin) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[27]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2151,7 +2245,7 @@ func (x *PickOmitOrigin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PickOmitOrigin.ProtoReflect.Descriptor instead.
 func (*PickOmitOrigin) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{27}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *PickOmitOrigin) GetKind() string {
@@ -2185,7 +2279,7 @@ type FieldTrace struct {
 
 func (x *FieldTrace) Reset() {
 	*x = FieldTrace{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[28]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2197,7 +2291,7 @@ func (x *FieldTrace) String() string {
 func (*FieldTrace) ProtoMessage() {}
 
 func (x *FieldTrace) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[28]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2210,7 +2304,7 @@ func (x *FieldTrace) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FieldTrace.ProtoReflect.Descriptor instead.
 func (*FieldTrace) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{28}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *FieldTrace) GetShape() *ShapeOrigin {
@@ -2233,7 +2327,7 @@ type ShapeOrigin struct {
 
 func (x *ShapeOrigin) Reset() {
 	*x = ShapeOrigin{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[29]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2245,7 +2339,7 @@ func (x *ShapeOrigin) String() string {
 func (*ShapeOrigin) ProtoMessage() {}
 
 func (x *ShapeOrigin) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[29]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2258,7 +2352,7 @@ func (x *ShapeOrigin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ShapeOrigin.ProtoReflect.Descriptor instead.
 func (*ShapeOrigin) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{29}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ShapeOrigin) GetShapeName() string {
@@ -2308,7 +2402,7 @@ type TypeBackRef struct {
 
 func (x *TypeBackRef) Reset() {
 	*x = TypeBackRef{}
-	mi := &file_oghamproto_ir_types_proto_msgTypes[30]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2320,7 +2414,7 @@ func (x *TypeBackRef) String() string {
 func (*TypeBackRef) ProtoMessage() {}
 
 func (x *TypeBackRef) ProtoReflect() protoreflect.Message {
-	mi := &file_oghamproto_ir_types_proto_msgTypes[30]
+	mi := &file_oghamproto_ir_types_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2333,7 +2427,7 @@ func (x *TypeBackRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TypeBackRef.ProtoReflect.Descriptor instead.
 func (*TypeBackRef) Descriptor() ([]byte, []int) {
-	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{30}
+	return file_oghamproto_ir_types_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *TypeBackRef) GetReferencingTypeName() string {
@@ -2361,12 +2455,19 @@ var File_oghamproto_ir_types_proto protoreflect.FileDescriptor
 
 const file_oghamproto_ir_types_proto_rawDesc = "" +
 	"\n" +
-	"\x19oghamproto/ir/types.proto\x12\roghamproto.ir\x1a\x1eoghamproto/common/source.proto\"\xac\x01\n" +
+	"\x19oghamproto/ir/types.proto\x12\roghamproto.ir\x1a\x1eoghamproto/common/source.proto\"}\n" +
+	"\n" +
+	"ModuleInfo\x12\x1f\n" +
+	"\vmodule_path\x18\x01 \x01(\tR\n" +
+	"modulePath\x12\x18\n" +
+	"\apackage\x18\x02 \x01(\tR\apackage\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\tR\aversion\x12\x1a\n" +
+	"\bgenerate\x18\x04 \x01(\bR\bgenerate\"\xac\x01\n" +
 	"\x06Module\x12\x18\n" +
 	"\apackage\x18\x01 \x01(\tR\apackage\x12)\n" +
 	"\x05types\x18\x02 \x03(\v2\x13.oghamproto.ir.TypeR\x05types\x12)\n" +
 	"\x05enums\x18\x03 \x03(\v2\x13.oghamproto.ir.EnumR\x05enums\x122\n" +
-	"\bservices\x18\x04 \x03(\v2\x16.oghamproto.ir.ServiceR\bservices\"\xfd\x03\n" +
+	"\bservices\x18\x04 \x03(\v2\x16.oghamproto.ir.ServiceR\bservices\"\xb0\x04\n" +
 	"\x04Type\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\tfull_name\x18\x02 \x01(\tR\bfullName\x12,\n" +
@@ -2378,7 +2479,8 @@ const file_oghamproto_ir_types_proto_rawDesc = "" +
 	"\x0fback_references\x18\b \x03(\v2\x1a.oghamproto.ir.TypeBackRefR\x0ebackReferences\x12.\n" +
 	"\x05trace\x18\t \x01(\v2\x18.oghamproto.ir.TypeTraceR\x05trace\x12=\n" +
 	"\blocation\x18\n" +
-	" \x01(\v2!.oghamproto.common.SourceLocationR\blocation\"\x8f\x03\n" +
+	" \x01(\v2!.oghamproto.common.SourceLocationR\blocation\x121\n" +
+	"\x06module\x18\x10 \x01(\v2\x19.oghamproto.ir.ModuleInfoR\x06module\"\x8f\x03\n" +
 	"\x05Field\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\rR\x06number\x120\n" +
@@ -2404,13 +2506,14 @@ const file_oghamproto_ir_types_proto_rawDesc = "" +
 	"\x04type\x18\x03 \x01(\v2\x1c.oghamproto.ir.TypeReferenceR\x04type\x12?\n" +
 	"\vannotations\x18\x04 \x03(\v2\x1d.oghamproto.ir.AnnotationCallR\vannotations\x125\n" +
 	"\amapping\x18\x05 \x01(\v2\x1b.oghamproto.ir.FieldMappingR\amapping\x12=\n" +
-	"\blocation\x18\x06 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\"\xe9\x01\n" +
+	"\blocation\x18\x06 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\"\x9c\x02\n" +
 	"\x04Enum\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\tfull_name\x18\x02 \x01(\tR\bfullName\x120\n" +
 	"\x06values\x18\x03 \x03(\v2\x18.oghamproto.ir.EnumValueR\x06values\x12?\n" +
 	"\vannotations\x18\x04 \x03(\v2\x1d.oghamproto.ir.AnnotationCallR\vannotations\x12=\n" +
-	"\blocation\x18\x05 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\"\xf2\x01\n" +
+	"\blocation\x18\x05 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\x121\n" +
+	"\x06module\x18\x06 \x01(\v2\x19.oghamproto.ir.ModuleInfoR\x06module\"\xf2\x01\n" +
 	"\tEnumValue\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06number\x18\x02 \x01(\x05R\x06number\x12\x1d\n" +
@@ -2418,13 +2521,14 @@ const file_oghamproto_ir_types_proto_rawDesc = "" +
 	"is_removed\x18\x03 \x01(\bR\tisRemoved\x12\x1a\n" +
 	"\bfallback\x18\x04 \x01(\tR\bfallback\x12?\n" +
 	"\vannotations\x18\x05 \x03(\v2\x1d.oghamproto.ir.AnnotationCallR\vannotations\x12=\n" +
-	"\blocation\x18\x06 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\"\xe2\x01\n" +
+	"\blocation\x18\x06 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\"\x95\x02\n" +
 	"\aService\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\tfull_name\x18\x02 \x01(\tR\bfullName\x12&\n" +
 	"\x04rpcs\x18\x03 \x03(\v2\x12.oghamproto.ir.RpcR\x04rpcs\x12?\n" +
 	"\vannotations\x18\x04 \x03(\v2\x1d.oghamproto.ir.AnnotationCallR\vannotations\x12=\n" +
-	"\blocation\x18\x05 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\"\xf9\x01\n" +
+	"\blocation\x18\x05 \x01(\v2!.oghamproto.common.SourceLocationR\blocation\x121\n" +
+	"\x06module\x18\x06 \x01(\v2\x19.oghamproto.ir.ModuleInfoR\x06module\"\xf9\x01\n" +
 	"\x03Rpc\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12-\n" +
 	"\x05input\x18\x02 \x01(\v2\x17.oghamproto.ir.RpcParamR\x05input\x12/\n" +
@@ -2579,118 +2683,122 @@ func file_oghamproto_ir_types_proto_rawDescGZIP() []byte {
 }
 
 var file_oghamproto_ir_types_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_oghamproto_ir_types_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_oghamproto_ir_types_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_oghamproto_ir_types_proto_goTypes = []any{
 	(ScalarKind)(0),                  // 0: oghamproto.ir.ScalarKind
-	(*Module)(nil),                   // 1: oghamproto.ir.Module
-	(*Type)(nil),                     // 2: oghamproto.ir.Type
-	(*Field)(nil),                    // 3: oghamproto.ir.Field
-	(*OneofGroup)(nil),               // 4: oghamproto.ir.OneofGroup
-	(*OneofField)(nil),               // 5: oghamproto.ir.OneofField
-	(*Enum)(nil),                     // 6: oghamproto.ir.Enum
-	(*EnumValue)(nil),                // 7: oghamproto.ir.EnumValue
-	(*Service)(nil),                  // 8: oghamproto.ir.Service
-	(*Rpc)(nil),                      // 9: oghamproto.ir.Rpc
-	(*RpcParam)(nil),                 // 10: oghamproto.ir.RpcParam
-	(*TypeReference)(nil),            // 11: oghamproto.ir.TypeReference
-	(*ScalarType)(nil),               // 12: oghamproto.ir.ScalarType
-	(*MessageType)(nil),              // 13: oghamproto.ir.MessageType
-	(*EnumType)(nil),                 // 14: oghamproto.ir.EnumType
-	(*MapType)(nil),                  // 15: oghamproto.ir.MapType
-	(*AnnotationCall)(nil),           // 16: oghamproto.ir.AnnotationCall
-	(*AnnotationArgument)(nil),       // 17: oghamproto.ir.AnnotationArgument
-	(*AnnotationLiteral)(nil),        // 18: oghamproto.ir.AnnotationLiteral
-	(*AnnotationStruct)(nil),         // 19: oghamproto.ir.AnnotationStruct
-	(*AnnotationList)(nil),           // 20: oghamproto.ir.AnnotationList
-	(*AnnotationDefinition)(nil),     // 21: oghamproto.ir.AnnotationDefinition
-	(*AnnotationParameter)(nil),      // 22: oghamproto.ir.AnnotationParameter
-	(*AnnotationCompositionRef)(nil), // 23: oghamproto.ir.AnnotationCompositionRef
-	(*FieldMapping)(nil),             // 24: oghamproto.ir.FieldMapping
-	(*MappingLink)(nil),              // 25: oghamproto.ir.MappingLink
-	(*TypeTrace)(nil),                // 26: oghamproto.ir.TypeTrace
-	(*GenericOrigin)(nil),            // 27: oghamproto.ir.GenericOrigin
-	(*PickOmitOrigin)(nil),           // 28: oghamproto.ir.PickOmitOrigin
-	(*FieldTrace)(nil),               // 29: oghamproto.ir.FieldTrace
-	(*ShapeOrigin)(nil),              // 30: oghamproto.ir.ShapeOrigin
-	(*TypeBackRef)(nil),              // 31: oghamproto.ir.TypeBackRef
-	nil,                              // 32: oghamproto.ir.AnnotationStruct.FieldsEntry
-	(*common.SourceLocation)(nil),    // 33: oghamproto.common.SourceLocation
+	(*ModuleInfo)(nil),               // 1: oghamproto.ir.ModuleInfo
+	(*Module)(nil),                   // 2: oghamproto.ir.Module
+	(*Type)(nil),                     // 3: oghamproto.ir.Type
+	(*Field)(nil),                    // 4: oghamproto.ir.Field
+	(*OneofGroup)(nil),               // 5: oghamproto.ir.OneofGroup
+	(*OneofField)(nil),               // 6: oghamproto.ir.OneofField
+	(*Enum)(nil),                     // 7: oghamproto.ir.Enum
+	(*EnumValue)(nil),                // 8: oghamproto.ir.EnumValue
+	(*Service)(nil),                  // 9: oghamproto.ir.Service
+	(*Rpc)(nil),                      // 10: oghamproto.ir.Rpc
+	(*RpcParam)(nil),                 // 11: oghamproto.ir.RpcParam
+	(*TypeReference)(nil),            // 12: oghamproto.ir.TypeReference
+	(*ScalarType)(nil),               // 13: oghamproto.ir.ScalarType
+	(*MessageType)(nil),              // 14: oghamproto.ir.MessageType
+	(*EnumType)(nil),                 // 15: oghamproto.ir.EnumType
+	(*MapType)(nil),                  // 16: oghamproto.ir.MapType
+	(*AnnotationCall)(nil),           // 17: oghamproto.ir.AnnotationCall
+	(*AnnotationArgument)(nil),       // 18: oghamproto.ir.AnnotationArgument
+	(*AnnotationLiteral)(nil),        // 19: oghamproto.ir.AnnotationLiteral
+	(*AnnotationStruct)(nil),         // 20: oghamproto.ir.AnnotationStruct
+	(*AnnotationList)(nil),           // 21: oghamproto.ir.AnnotationList
+	(*AnnotationDefinition)(nil),     // 22: oghamproto.ir.AnnotationDefinition
+	(*AnnotationParameter)(nil),      // 23: oghamproto.ir.AnnotationParameter
+	(*AnnotationCompositionRef)(nil), // 24: oghamproto.ir.AnnotationCompositionRef
+	(*FieldMapping)(nil),             // 25: oghamproto.ir.FieldMapping
+	(*MappingLink)(nil),              // 26: oghamproto.ir.MappingLink
+	(*TypeTrace)(nil),                // 27: oghamproto.ir.TypeTrace
+	(*GenericOrigin)(nil),            // 28: oghamproto.ir.GenericOrigin
+	(*PickOmitOrigin)(nil),           // 29: oghamproto.ir.PickOmitOrigin
+	(*FieldTrace)(nil),               // 30: oghamproto.ir.FieldTrace
+	(*ShapeOrigin)(nil),              // 31: oghamproto.ir.ShapeOrigin
+	(*TypeBackRef)(nil),              // 32: oghamproto.ir.TypeBackRef
+	nil,                              // 33: oghamproto.ir.AnnotationStruct.FieldsEntry
+	(*common.SourceLocation)(nil),    // 34: oghamproto.common.SourceLocation
 }
 var file_oghamproto_ir_types_proto_depIdxs = []int32{
-	2,  // 0: oghamproto.ir.Module.types:type_name -> oghamproto.ir.Type
-	6,  // 1: oghamproto.ir.Module.enums:type_name -> oghamproto.ir.Enum
-	8,  // 2: oghamproto.ir.Module.services:type_name -> oghamproto.ir.Service
-	3,  // 3: oghamproto.ir.Type.fields:type_name -> oghamproto.ir.Field
-	4,  // 4: oghamproto.ir.Type.oneofs:type_name -> oghamproto.ir.OneofGroup
-	2,  // 5: oghamproto.ir.Type.nested_types:type_name -> oghamproto.ir.Type
-	6,  // 6: oghamproto.ir.Type.nested_enums:type_name -> oghamproto.ir.Enum
-	16, // 7: oghamproto.ir.Type.annotations:type_name -> oghamproto.ir.AnnotationCall
-	31, // 8: oghamproto.ir.Type.back_references:type_name -> oghamproto.ir.TypeBackRef
-	26, // 9: oghamproto.ir.Type.trace:type_name -> oghamproto.ir.TypeTrace
-	33, // 10: oghamproto.ir.Type.location:type_name -> oghamproto.common.SourceLocation
-	11, // 11: oghamproto.ir.Field.type:type_name -> oghamproto.ir.TypeReference
-	16, // 12: oghamproto.ir.Field.annotations:type_name -> oghamproto.ir.AnnotationCall
-	24, // 13: oghamproto.ir.Field.mapping:type_name -> oghamproto.ir.FieldMapping
-	29, // 14: oghamproto.ir.Field.trace:type_name -> oghamproto.ir.FieldTrace
-	33, // 15: oghamproto.ir.Field.location:type_name -> oghamproto.common.SourceLocation
-	5,  // 16: oghamproto.ir.OneofGroup.fields:type_name -> oghamproto.ir.OneofField
-	16, // 17: oghamproto.ir.OneofGroup.annotations:type_name -> oghamproto.ir.AnnotationCall
-	33, // 18: oghamproto.ir.OneofGroup.location:type_name -> oghamproto.common.SourceLocation
-	11, // 19: oghamproto.ir.OneofField.type:type_name -> oghamproto.ir.TypeReference
-	16, // 20: oghamproto.ir.OneofField.annotations:type_name -> oghamproto.ir.AnnotationCall
-	24, // 21: oghamproto.ir.OneofField.mapping:type_name -> oghamproto.ir.FieldMapping
-	33, // 22: oghamproto.ir.OneofField.location:type_name -> oghamproto.common.SourceLocation
-	7,  // 23: oghamproto.ir.Enum.values:type_name -> oghamproto.ir.EnumValue
-	16, // 24: oghamproto.ir.Enum.annotations:type_name -> oghamproto.ir.AnnotationCall
-	33, // 25: oghamproto.ir.Enum.location:type_name -> oghamproto.common.SourceLocation
-	16, // 26: oghamproto.ir.EnumValue.annotations:type_name -> oghamproto.ir.AnnotationCall
-	33, // 27: oghamproto.ir.EnumValue.location:type_name -> oghamproto.common.SourceLocation
-	9,  // 28: oghamproto.ir.Service.rpcs:type_name -> oghamproto.ir.Rpc
-	16, // 29: oghamproto.ir.Service.annotations:type_name -> oghamproto.ir.AnnotationCall
-	33, // 30: oghamproto.ir.Service.location:type_name -> oghamproto.common.SourceLocation
-	10, // 31: oghamproto.ir.Rpc.input:type_name -> oghamproto.ir.RpcParam
-	10, // 32: oghamproto.ir.Rpc.output:type_name -> oghamproto.ir.RpcParam
-	16, // 33: oghamproto.ir.Rpc.annotations:type_name -> oghamproto.ir.AnnotationCall
-	33, // 34: oghamproto.ir.Rpc.location:type_name -> oghamproto.common.SourceLocation
-	11, // 35: oghamproto.ir.RpcParam.type:type_name -> oghamproto.ir.TypeReference
-	12, // 36: oghamproto.ir.TypeReference.scalar:type_name -> oghamproto.ir.ScalarType
-	13, // 37: oghamproto.ir.TypeReference.message_type:type_name -> oghamproto.ir.MessageType
-	14, // 38: oghamproto.ir.TypeReference.enum_type:type_name -> oghamproto.ir.EnumType
-	15, // 39: oghamproto.ir.TypeReference.map:type_name -> oghamproto.ir.MapType
-	0,  // 40: oghamproto.ir.ScalarType.scalar_kind:type_name -> oghamproto.ir.ScalarKind
-	3,  // 41: oghamproto.ir.MessageType.fields:type_name -> oghamproto.ir.Field
-	4,  // 42: oghamproto.ir.MessageType.oneofs:type_name -> oghamproto.ir.OneofGroup
-	6,  // 43: oghamproto.ir.MessageType.nested_enums:type_name -> oghamproto.ir.Enum
-	16, // 44: oghamproto.ir.MessageType.annotations:type_name -> oghamproto.ir.AnnotationCall
-	7,  // 45: oghamproto.ir.EnumType.values:type_name -> oghamproto.ir.EnumValue
-	11, // 46: oghamproto.ir.MapType.key:type_name -> oghamproto.ir.TypeReference
-	11, // 47: oghamproto.ir.MapType.value:type_name -> oghamproto.ir.TypeReference
-	17, // 48: oghamproto.ir.AnnotationCall.arguments:type_name -> oghamproto.ir.AnnotationArgument
-	21, // 49: oghamproto.ir.AnnotationCall.definition:type_name -> oghamproto.ir.AnnotationDefinition
-	33, // 50: oghamproto.ir.AnnotationCall.location:type_name -> oghamproto.common.SourceLocation
-	18, // 51: oghamproto.ir.AnnotationArgument.value:type_name -> oghamproto.ir.AnnotationLiteral
-	19, // 52: oghamproto.ir.AnnotationLiteral.struct_value:type_name -> oghamproto.ir.AnnotationStruct
-	20, // 53: oghamproto.ir.AnnotationLiteral.list_value:type_name -> oghamproto.ir.AnnotationList
-	32, // 54: oghamproto.ir.AnnotationStruct.fields:type_name -> oghamproto.ir.AnnotationStruct.FieldsEntry
-	18, // 55: oghamproto.ir.AnnotationList.values:type_name -> oghamproto.ir.AnnotationLiteral
-	22, // 56: oghamproto.ir.AnnotationDefinition.parameters:type_name -> oghamproto.ir.AnnotationParameter
-	23, // 57: oghamproto.ir.AnnotationDefinition.compositions:type_name -> oghamproto.ir.AnnotationCompositionRef
-	11, // 58: oghamproto.ir.AnnotationParameter.type:type_name -> oghamproto.ir.TypeReference
-	18, // 59: oghamproto.ir.AnnotationParameter.default_value:type_name -> oghamproto.ir.AnnotationLiteral
-	17, // 60: oghamproto.ir.AnnotationCompositionRef.arguments:type_name -> oghamproto.ir.AnnotationArgument
-	25, // 61: oghamproto.ir.FieldMapping.chain:type_name -> oghamproto.ir.MappingLink
-	11, // 62: oghamproto.ir.MappingLink.source_field_type:type_name -> oghamproto.ir.TypeReference
-	16, // 63: oghamproto.ir.MappingLink.source_field_annotations:type_name -> oghamproto.ir.AnnotationCall
-	27, // 64: oghamproto.ir.TypeTrace.generic:type_name -> oghamproto.ir.GenericOrigin
-	28, // 65: oghamproto.ir.TypeTrace.pick_omit:type_name -> oghamproto.ir.PickOmitOrigin
-	30, // 66: oghamproto.ir.FieldTrace.shape:type_name -> oghamproto.ir.ShapeOrigin
-	33, // 67: oghamproto.ir.ShapeOrigin.shape_location:type_name -> oghamproto.common.SourceLocation
-	18, // 68: oghamproto.ir.AnnotationStruct.FieldsEntry.value:type_name -> oghamproto.ir.AnnotationLiteral
-	69, // [69:69] is the sub-list for method output_type
-	69, // [69:69] is the sub-list for method input_type
-	69, // [69:69] is the sub-list for extension type_name
-	69, // [69:69] is the sub-list for extension extendee
-	0,  // [0:69] is the sub-list for field type_name
+	3,  // 0: oghamproto.ir.Module.types:type_name -> oghamproto.ir.Type
+	7,  // 1: oghamproto.ir.Module.enums:type_name -> oghamproto.ir.Enum
+	9,  // 2: oghamproto.ir.Module.services:type_name -> oghamproto.ir.Service
+	4,  // 3: oghamproto.ir.Type.fields:type_name -> oghamproto.ir.Field
+	5,  // 4: oghamproto.ir.Type.oneofs:type_name -> oghamproto.ir.OneofGroup
+	3,  // 5: oghamproto.ir.Type.nested_types:type_name -> oghamproto.ir.Type
+	7,  // 6: oghamproto.ir.Type.nested_enums:type_name -> oghamproto.ir.Enum
+	17, // 7: oghamproto.ir.Type.annotations:type_name -> oghamproto.ir.AnnotationCall
+	32, // 8: oghamproto.ir.Type.back_references:type_name -> oghamproto.ir.TypeBackRef
+	27, // 9: oghamproto.ir.Type.trace:type_name -> oghamproto.ir.TypeTrace
+	34, // 10: oghamproto.ir.Type.location:type_name -> oghamproto.common.SourceLocation
+	1,  // 11: oghamproto.ir.Type.module:type_name -> oghamproto.ir.ModuleInfo
+	12, // 12: oghamproto.ir.Field.type:type_name -> oghamproto.ir.TypeReference
+	17, // 13: oghamproto.ir.Field.annotations:type_name -> oghamproto.ir.AnnotationCall
+	25, // 14: oghamproto.ir.Field.mapping:type_name -> oghamproto.ir.FieldMapping
+	30, // 15: oghamproto.ir.Field.trace:type_name -> oghamproto.ir.FieldTrace
+	34, // 16: oghamproto.ir.Field.location:type_name -> oghamproto.common.SourceLocation
+	6,  // 17: oghamproto.ir.OneofGroup.fields:type_name -> oghamproto.ir.OneofField
+	17, // 18: oghamproto.ir.OneofGroup.annotations:type_name -> oghamproto.ir.AnnotationCall
+	34, // 19: oghamproto.ir.OneofGroup.location:type_name -> oghamproto.common.SourceLocation
+	12, // 20: oghamproto.ir.OneofField.type:type_name -> oghamproto.ir.TypeReference
+	17, // 21: oghamproto.ir.OneofField.annotations:type_name -> oghamproto.ir.AnnotationCall
+	25, // 22: oghamproto.ir.OneofField.mapping:type_name -> oghamproto.ir.FieldMapping
+	34, // 23: oghamproto.ir.OneofField.location:type_name -> oghamproto.common.SourceLocation
+	8,  // 24: oghamproto.ir.Enum.values:type_name -> oghamproto.ir.EnumValue
+	17, // 25: oghamproto.ir.Enum.annotations:type_name -> oghamproto.ir.AnnotationCall
+	34, // 26: oghamproto.ir.Enum.location:type_name -> oghamproto.common.SourceLocation
+	1,  // 27: oghamproto.ir.Enum.module:type_name -> oghamproto.ir.ModuleInfo
+	17, // 28: oghamproto.ir.EnumValue.annotations:type_name -> oghamproto.ir.AnnotationCall
+	34, // 29: oghamproto.ir.EnumValue.location:type_name -> oghamproto.common.SourceLocation
+	10, // 30: oghamproto.ir.Service.rpcs:type_name -> oghamproto.ir.Rpc
+	17, // 31: oghamproto.ir.Service.annotations:type_name -> oghamproto.ir.AnnotationCall
+	34, // 32: oghamproto.ir.Service.location:type_name -> oghamproto.common.SourceLocation
+	1,  // 33: oghamproto.ir.Service.module:type_name -> oghamproto.ir.ModuleInfo
+	11, // 34: oghamproto.ir.Rpc.input:type_name -> oghamproto.ir.RpcParam
+	11, // 35: oghamproto.ir.Rpc.output:type_name -> oghamproto.ir.RpcParam
+	17, // 36: oghamproto.ir.Rpc.annotations:type_name -> oghamproto.ir.AnnotationCall
+	34, // 37: oghamproto.ir.Rpc.location:type_name -> oghamproto.common.SourceLocation
+	12, // 38: oghamproto.ir.RpcParam.type:type_name -> oghamproto.ir.TypeReference
+	13, // 39: oghamproto.ir.TypeReference.scalar:type_name -> oghamproto.ir.ScalarType
+	14, // 40: oghamproto.ir.TypeReference.message_type:type_name -> oghamproto.ir.MessageType
+	15, // 41: oghamproto.ir.TypeReference.enum_type:type_name -> oghamproto.ir.EnumType
+	16, // 42: oghamproto.ir.TypeReference.map:type_name -> oghamproto.ir.MapType
+	0,  // 43: oghamproto.ir.ScalarType.scalar_kind:type_name -> oghamproto.ir.ScalarKind
+	4,  // 44: oghamproto.ir.MessageType.fields:type_name -> oghamproto.ir.Field
+	5,  // 45: oghamproto.ir.MessageType.oneofs:type_name -> oghamproto.ir.OneofGroup
+	7,  // 46: oghamproto.ir.MessageType.nested_enums:type_name -> oghamproto.ir.Enum
+	17, // 47: oghamproto.ir.MessageType.annotations:type_name -> oghamproto.ir.AnnotationCall
+	8,  // 48: oghamproto.ir.EnumType.values:type_name -> oghamproto.ir.EnumValue
+	12, // 49: oghamproto.ir.MapType.key:type_name -> oghamproto.ir.TypeReference
+	12, // 50: oghamproto.ir.MapType.value:type_name -> oghamproto.ir.TypeReference
+	18, // 51: oghamproto.ir.AnnotationCall.arguments:type_name -> oghamproto.ir.AnnotationArgument
+	22, // 52: oghamproto.ir.AnnotationCall.definition:type_name -> oghamproto.ir.AnnotationDefinition
+	34, // 53: oghamproto.ir.AnnotationCall.location:type_name -> oghamproto.common.SourceLocation
+	19, // 54: oghamproto.ir.AnnotationArgument.value:type_name -> oghamproto.ir.AnnotationLiteral
+	20, // 55: oghamproto.ir.AnnotationLiteral.struct_value:type_name -> oghamproto.ir.AnnotationStruct
+	21, // 56: oghamproto.ir.AnnotationLiteral.list_value:type_name -> oghamproto.ir.AnnotationList
+	33, // 57: oghamproto.ir.AnnotationStruct.fields:type_name -> oghamproto.ir.AnnotationStruct.FieldsEntry
+	19, // 58: oghamproto.ir.AnnotationList.values:type_name -> oghamproto.ir.AnnotationLiteral
+	23, // 59: oghamproto.ir.AnnotationDefinition.parameters:type_name -> oghamproto.ir.AnnotationParameter
+	24, // 60: oghamproto.ir.AnnotationDefinition.compositions:type_name -> oghamproto.ir.AnnotationCompositionRef
+	12, // 61: oghamproto.ir.AnnotationParameter.type:type_name -> oghamproto.ir.TypeReference
+	19, // 62: oghamproto.ir.AnnotationParameter.default_value:type_name -> oghamproto.ir.AnnotationLiteral
+	18, // 63: oghamproto.ir.AnnotationCompositionRef.arguments:type_name -> oghamproto.ir.AnnotationArgument
+	26, // 64: oghamproto.ir.FieldMapping.chain:type_name -> oghamproto.ir.MappingLink
+	12, // 65: oghamproto.ir.MappingLink.source_field_type:type_name -> oghamproto.ir.TypeReference
+	17, // 66: oghamproto.ir.MappingLink.source_field_annotations:type_name -> oghamproto.ir.AnnotationCall
+	28, // 67: oghamproto.ir.TypeTrace.generic:type_name -> oghamproto.ir.GenericOrigin
+	29, // 68: oghamproto.ir.TypeTrace.pick_omit:type_name -> oghamproto.ir.PickOmitOrigin
+	31, // 69: oghamproto.ir.FieldTrace.shape:type_name -> oghamproto.ir.ShapeOrigin
+	34, // 70: oghamproto.ir.ShapeOrigin.shape_location:type_name -> oghamproto.common.SourceLocation
+	19, // 71: oghamproto.ir.AnnotationStruct.FieldsEntry.value:type_name -> oghamproto.ir.AnnotationLiteral
+	72, // [72:72] is the sub-list for method output_type
+	72, // [72:72] is the sub-list for method input_type
+	72, // [72:72] is the sub-list for extension type_name
+	72, // [72:72] is the sub-list for extension extendee
+	0,  // [0:72] is the sub-list for field type_name
 }
 
 func init() { file_oghamproto_ir_types_proto_init() }
@@ -2698,13 +2806,13 @@ func file_oghamproto_ir_types_proto_init() {
 	if File_oghamproto_ir_types_proto != nil {
 		return
 	}
-	file_oghamproto_ir_types_proto_msgTypes[10].OneofWrappers = []any{
+	file_oghamproto_ir_types_proto_msgTypes[11].OneofWrappers = []any{
 		(*TypeReference_Scalar)(nil),
 		(*TypeReference_MessageType)(nil),
 		(*TypeReference_EnumType)(nil),
 		(*TypeReference_Map)(nil),
 	}
-	file_oghamproto_ir_types_proto_msgTypes[17].OneofWrappers = []any{
+	file_oghamproto_ir_types_proto_msgTypes[18].OneofWrappers = []any{
 		(*AnnotationLiteral_StringValue)(nil),
 		(*AnnotationLiteral_IntValue)(nil),
 		(*AnnotationLiteral_FloatValue)(nil),
@@ -2712,7 +2820,7 @@ func file_oghamproto_ir_types_proto_init() {
 		(*AnnotationLiteral_StructValue)(nil),
 		(*AnnotationLiteral_ListValue)(nil),
 	}
-	file_oghamproto_ir_types_proto_msgTypes[25].OneofWrappers = []any{
+	file_oghamproto_ir_types_proto_msgTypes[26].OneofWrappers = []any{
 		(*TypeTrace_Generic)(nil),
 		(*TypeTrace_PickOmit)(nil),
 	}
@@ -2722,7 +2830,7 @@ func file_oghamproto_ir_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_oghamproto_ir_types_proto_rawDesc), len(file_oghamproto_ir_types_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   32,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

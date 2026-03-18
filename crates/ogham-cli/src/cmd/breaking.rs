@@ -11,7 +11,7 @@ use std::process::Command;
 pub fn run(args: BreakingArgs) -> Result<(), String> {
     // Compile current schemas
     let dir = Path::new(".");
-    let (new_module, _) = compile_project(dir)?;
+    let (new_module, _, _) = compile_project(dir)?;
 
     // Load and compile old schemas
     let old_sources = load_reference(&args.against, dir)?;
@@ -42,6 +42,7 @@ pub fn run(args: BreakingArgs) -> Result<(), String> {
         &old_result.arenas,
         &old_result.symbols,
         &old_package,
+        None,
     );
 
     // Compare

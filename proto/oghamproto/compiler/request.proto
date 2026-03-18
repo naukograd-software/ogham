@@ -19,6 +19,10 @@ message OghamCompileRequest {
 
     // Output directory specified in ogham.gen.yaml.
     string output_dir = 4;
+
+    // Module path from ogham.mod.yaml, e.g. "github.com/org/dashboard".
+    // Used by plugins to compute import paths (module_path + "/" + out).
+    string module_path = 5;
 }
 
 // Returned by a plugin via stdout.

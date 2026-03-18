@@ -53,8 +53,8 @@ shape TemplateShape<T> { //CODE: shapes can be used with template types -- only 
 }
 
 shape Timestamps {
-    std.Timestamp created_at @default(now);
-    std.Timestamp updated_at @default(now);
+    std.Timestamp created_at @default::Default(now);
+    std.Timestamp updated_at @default::Default(now);
 }
 
 shape SafeDelete {
@@ -104,7 +104,7 @@ type User {
   UserIsAdmin is_admin = 14; // CODE: using type alias
   float score = 15;
   map<string, string> metadata = 16; //CODE: map is generic map<comparable, any>
-  @reserved(17)
+  reserved 17;
 }
 
 // CODE: Pick and Omit are language keywords, not from std
@@ -132,12 +132,6 @@ enum OrderStatus { // CODE: enum for using in code
     Pending=1;
     Processing=2;
     Completed=3;
-    @removed(fallback=Completed) // CODE: if removed - need fallback to non-removed value
-    Delivered=4;
-    @removed(fallback=Completed) // CODE: fallback must point to non-removed value (chaining prohibited)
-    Failed=5;
-    @removed(fallback=Completed) // CODE: fallback must point to non-removed value (chaining prohibited)
-    Refunded=6;
     Cancelled=7;
 }
 

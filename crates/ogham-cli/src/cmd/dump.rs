@@ -4,7 +4,7 @@ use crate::cli::DumpArgs;
 use crate::cmd::generate::compile_project;
 
 pub fn run(args: DumpArgs) -> Result<(), String> {
-    let (module, _) = compile_project(&args.dir)?;
+    let (module, _, _) = compile_project(&args.dir)?;
 
     let json = serde_json::to_string_pretty(&module)
         .map_err(|e| format!("failed to serialize IR: {}", e))?;

@@ -16,43 +16,21 @@ fn collect_annotation_calls(
     annotations
         .iter()
         .map(|ann| {
-            if ann.is_builtin() {
-                let name_text = ann
-                    .builtin_name()
-                    .map(|t| t.text().to_string())
-                    .unwrap_or_default();
-                let name_sym = interner.intern(&name_text);
-                let empty_sym = interner.intern("");
+            let (lib, name) = ann.library_name().unwrap_or_default();
+            let lib_sym = interner.intern(&lib);
+            let name_sym = interner.intern(&name);
 
-                let arguments = ann
-                    .args()
-                    .map(|args| collect_annotation_args(&args, interner))
-                    .unwrap_or_default();
+            let arguments = ann
+                .args()
+                .map(|args| collect_annotation_args(&args, interner))
+                .unwrap_or_default();
 
-                AnnotationCall {
-                    library: empty_sym,
-                    name: name_sym,
-                    arguments,
-                    definition: None,
-                    loc: Loc::default(),
-                }
-            } else {
-                let (lib, name) = ann.library_name().unwrap_or_default();
-                let lib_sym = interner.intern(&lib);
-                let name_sym = interner.intern(&name);
-
-                let arguments = ann
-                    .args()
-                    .map(|args| collect_annotation_args(&args, interner))
-                    .unwrap_or_default();
-
-                AnnotationCall {
-                    library: lib_sym,
-                    name: name_sym,
-                    arguments,
-                    definition: None,
-                    loc: Loc::default(),
-                }
+            AnnotationCall {
+                library: lib_sym,
+                name: name_sym,
+                arguments,
+                definition: None,
+                loc: Loc::default(),
             }
         })
         .collect()
@@ -98,9 +76,6 @@ fn parse_annotation_value(value: &ast::AnnotationValue, interner: &mut Interner)
     }
     if text == "false" {
         return LiteralValue::Bool(false);
-    }
-    if text == "now" {
-        return LiteralValue::Ident(interner.intern("now"));
     }
     if let Ok(i) = text.parse::<i64>() {
         return LiteralValue::Int(i);
@@ -149,6 +124,10 @@ pub fn populate_and_resolve(
                 None => continue,
             };
 
+            // Collect type-level annotations
+            arenas.types[type_id].annotations =
+                collect_annotation_calls(&type_decl.annotations(), interner);
+
             if let Some(body) = type_decl.body() {
                 let fields = collect_fields(
                     &body.fields(),
@@ -173,6 +152,37 @@ pub fn populate_and_resolve(
                     &file.file_name,
                 );
                 arenas.types[type_id].oneofs = oneofs;
+
+                // Populate nested types recursively
+                for nested in body.nested_types() {
+                    if let Some(inner_decl) = nested.type_decl() {
+                        let nested_name = match inner_decl.name() {
+                            Some(t) => t.text().to_string(),
+                            None => continue,
+                        };
+                        let nested_full = format!("{}.{}", full, nested_name);
+                        let nested_full_sym = interner.intern(&nested_full);
+
+                        let nested_id = match symbols.types.get(&nested_full_sym) {
+                            Some(id) => *id,
+                            None => continue,
+                        };
+
+                        if let Some(nested_body) = inner_decl.body() {
+                            let nested_fields = collect_fields(
+                                &nested_body.fields(),
+                                interner, file_sym, pkg, &imports, symbols, diag, &file.file_name,
+                            );
+                            arenas.types[nested_id].fields = nested_fields;
+
+                            let nested_oneofs = collect_oneofs(
+                                &nested_body.oneofs(),
+                                interner, file_sym, pkg, &imports, symbols, diag, &file.file_name,
+                            );
+                            arenas.types[nested_id].oneofs = nested_oneofs;
+                        }
+                    }
+                }
             }
         }
 
@@ -212,7 +222,29 @@ pub fn populate_and_resolve(
             arenas.shapes[shape_id].fields = fields;
         }
 
-        // Populate service RPCs
+    }
+}
+
+/// Resolve service RPC params from AST.
+///
+/// Run this **after** all type expansion passes (aliases, shapes, generics,
+/// Pick/Omit) so that every type name is available in the symbol table.
+pub fn resolve_rpcs(
+    files: &[ParsedFile],
+    interner: &mut Interner,
+    arenas: &mut Arenas,
+    symbols: &SymbolTable,
+    diag: &mut Diagnostics,
+) {
+    for file in files {
+        let root = match ast::Root::cast(file.root.clone()) {
+            Some(r) => r,
+            None => continue,
+        };
+
+        let pkg = &file.package;
+        let imports = collect_imports(&root, interner, pkg);
+
         for svc_decl in root.service_decls() {
             let name_text = match svc_decl.name() {
                 Some(t) => t.text().to_string(),
@@ -233,7 +265,7 @@ pub fn populate_and_resolve(
                     let name = rpc.name()?.text().to_string();
                     let input = rpc
                         .input()
-                        .map(|p| resolve_rpc_param(&p, interner, pkg, &imports, symbols, diag, &file.file_name))
+                        .map(|p| resolve_rpc_param(&p, interner, pkg, &imports, symbols, diag, &file.file_name, arenas, &name_text, &name, true))
                         .unwrap_or(RpcParamDef {
                             is_void: true,
                             is_stream: false,
@@ -241,7 +273,7 @@ pub fn populate_and_resolve(
                         });
                     let output = rpc
                         .output()
-                        .map(|p| resolve_rpc_param(&p, interner, pkg, &imports, symbols, diag, &file.file_name))
+                        .map(|p| resolve_rpc_param(&p, interner, pkg, &imports, symbols, diag, &file.file_name, arenas, &name_text, &name, false))
                         .unwrap_or(RpcParamDef {
                             is_void: true,
                             is_stream: false,
@@ -259,6 +291,9 @@ pub fn populate_and_resolve(
                 .collect();
 
             arenas.services[svc_id].rpcs = rpcs;
+            // Collect service-level annotations
+            arenas.services[svc_id].annotations =
+                collect_annotation_calls(&svc_decl.annotations(), interner);
         }
     }
 }
@@ -408,6 +443,10 @@ fn resolve_rpc_param(
     symbols: &SymbolTable,
     diag: &mut Diagnostics,
     file_name: &str,
+    arenas: &mut Arenas,
+    svc_name: &str,
+    rpc_name: &str,
+    is_input: bool,
 ) -> RpcParamDef {
     if param.is_void() {
         return RpcParamDef {
@@ -421,6 +460,73 @@ fn resolve_rpc_param(
 
     let ty = if let Some(tr) = param.type_ref() {
         resolve_type_ref(&tr, interner, pkg, imports, symbols, diag, file_name)
+    } else if let Some(inline) = param.inline_type() {
+        // Create an anonymous message type for inline RPC param.
+        // e.g., service UserAPI { rpc CreateUser({ string name = 1; }) -> User; }
+        // → generates type UserAPI_CreateUserRequest { string name = 1; }
+        let suffix = if is_input { "Request" } else { "Response" };
+        let type_name = format!("{}_{}{}", svc_name, rpc_name, suffix);
+        let full_name = format!("{}.{}", pkg, type_name);
+
+        let name_sym = interner.intern(&type_name);
+        let full_sym = interner.intern(&full_name);
+
+        // Collect fields from inline type
+        let mut fields = Vec::new();
+        for field_decl in inline.fields() {
+            let field_name_text = match field_decl.name() {
+                Some(t) => t.text().to_string(),
+                None => continue,
+            };
+            let field_number = field_decl.field_number().unwrap_or(0);
+            let is_optional = field_decl.type_ref().as_ref().map_or(false, |tr| tr.is_optional());
+            let is_repeated = field_decl.type_ref().as_ref().map_or(false, |tr| tr.array_type().is_some());
+            let field_ty = field_decl
+                .type_ref()
+                .map(|tr| resolve_type_ref(&tr, interner, pkg, imports, symbols, diag, file_name))
+                .unwrap_or(ResolvedType::Error);
+            let annotations = collect_annotation_calls(&field_decl.annotations(), interner);
+
+            fields.push(FieldDef {
+                name: interner.intern(&field_name_text),
+                number: field_number,
+                ty: field_ty,
+                is_optional,
+                is_repeated,
+                annotations,
+                mapping: None,
+                trace: None,
+                loc: Loc::default(),
+            });
+        }
+
+        // Collect oneofs from inline type
+        let file_sym = interner.intern(file_name);
+        let oneofs = collect_oneofs(
+            &inline.oneofs(),
+            interner,
+            file_sym,
+            pkg,
+            imports,
+            symbols,
+            diag,
+            file_name,
+        );
+
+        let type_id = arenas.types.alloc(TypeDef {
+            name: name_sym,
+            full_name: full_sym,
+            fields,
+            oneofs,
+            nested_types: Vec::new(),
+            nested_enums: Vec::new(),
+            annotations: Vec::new(),
+            back_references: Vec::new(),
+            trace: None,
+            loc: Loc::default(),
+        });
+
+        ResolvedType::Message(type_id)
     } else {
         ResolvedType::Error
     };
@@ -499,14 +605,26 @@ fn resolve_type_ref(
         let rest = &segments[1..];
         let type_name = rest.last().unwrap();
 
-        // Check imports (first segment = import alias)
+        // Check imports (first segment = import alias or package short name)
         if let Some(import_path) = imports.get(first) {
+            // Try full import path + type name
             let full = format!("{}.{}", import_path, type_name);
             let full_sym = interner.intern(&full);
             if let Some(id) = symbols.types.get(&full_sym) {
                 return ResolvedType::Message(*id);
             }
             if let Some(id) = symbols.enums.get(&full_sym) {
+                return ResolvedType::Enum(*id);
+            }
+            // Try last segment of import path as package name
+            // e.g., "github.com/oghamlang/std/decimal" → "decimal"
+            let pkg_name = import_path.rsplit('/').next().unwrap_or(import_path);
+            let pkg_full = format!("{}.{}", pkg_name, type_name);
+            let pkg_sym = interner.intern(&pkg_full);
+            if let Some(id) = symbols.types.get(&pkg_sym) {
+                return ResolvedType::Message(*id);
+            }
+            if let Some(id) = symbols.enums.get(&pkg_sym) {
                 return ResolvedType::Enum(*id);
             }
         }
@@ -887,17 +1005,19 @@ pub fn expand_annotation_compositions(
                 symbols
                     .annotations
                     .get(&(c.library, c.name))
-                    .map(|tid| expanded.contains(tid))
+                    .map(|ids| ids.iter().all(|tid| expanded.contains(tid)))
                     .unwrap_or(true) // missing = skip
             });
 
             if all_ready {
-                // Flatten: copy params from composed annotations
+                // Flatten: copy params from composed annotations (use first overload)
                 let mut extra_params = Vec::new();
                 for comp in &compositions {
-                    if let Some(target_id) = symbols.annotations.get(&(comp.library, comp.name)) {
-                        let target = &arenas.annotation_defs[*target_id];
-                        extra_params.extend(target.params.clone());
+                    if let Some(target_ids) = symbols.annotations.get(&(comp.library, comp.name)) {
+                        if let Some(first_id) = target_ids.first() {
+                            let target = &arenas.annotation_defs[*first_id];
+                            extra_params.extend(target.params.clone());
+                        }
                     }
                 }
                 arenas.annotation_defs[id].params.extend(extra_params);
@@ -955,8 +1075,11 @@ pub fn monomorphize_generics(
         };
 
         // Check it actually has type params
-        // For now we create the monomorphized name and type
-        let mono_name = format!("{}{}", generic_name, args.join(""));
+        // For the monomorphized name, use short names (last segment) for readability
+        let short_args: Vec<&str> = args.iter().map(|a| {
+            a.rsplit_once('.').map(|(_, n)| n).unwrap_or(a.as_str())
+        }).collect();
+        let mono_name = format!("{}{}", generic_name, short_args.join(""));
         let mono_full = format!("{}.{}", pkg, mono_name);
         let mono_full_sym = interner.intern(&mono_full);
 
@@ -1015,7 +1138,12 @@ fn substitute_type_param(
             // This is simplified: real impl would match param names
             if name.len() <= 2 && !args.is_empty() {
                 let arg = &args[0];
-                let full = format!("{}.{}", pkg, arg);
+                // Try qualified name directly (e.g., "fleet.Vehicle" → already a full name)
+                let full = if arg.contains('.') {
+                    arg.clone()
+                } else {
+                    format!("{}.{}", pkg, arg)
+                };
                 let full_sym = interner.intern(&full);
                 if let Some(id) = symbols.types.get(&full_sym) {
                     *ty = ResolvedType::Message(*id);
@@ -1070,7 +1198,18 @@ fn check_type_ref_generic(tr: &ast::TypeRef, pkg: &str, out: &mut Vec<(String, S
             let name = qn.segments().join(".");
             let args: Vec<String> = type_args
                 .iter()
-                .filter_map(|a| a.qualified_name().map(|q| q.segments().last().cloned().unwrap_or_default()))
+                .filter_map(|a| {
+                    a.qualified_name().map(|q| {
+                        let segs = q.segments();
+                        if segs.len() == 1 {
+                            // Simple name like "Order" — same package
+                            segs[0].clone()
+                        } else {
+                            // Qualified name like "fleet.Vehicle" — preserve full path
+                            segs.join(".")
+                        }
+                    })
+                })
                 .collect();
             if !args.is_empty() {
                 out.push((pkg.to_string(), name, args));
@@ -1087,7 +1226,7 @@ pub fn expand_pick_omit(
     interner: &mut Interner,
     arenas: &mut Arenas,
     symbols: &mut SymbolTable,
-    _diag: &mut Diagnostics,
+    diag: &mut Diagnostics,
 ) {
     for file in files {
         let root = match ast::Root::cast(file.root.clone()) {
@@ -1171,9 +1310,26 @@ pub fn expand_pick_omit(
                     });
 
                 if let Some(src_id) = source_id {
-                    let omitted_names: Vec<String> = field_list
-                        .map(|fl| fl.names().iter().map(|t| t.text().to_string()).collect())
-                        .unwrap_or_default();
+                    // Collect field names to omit — expand shape references to their field names
+                    let mut omitted_names: Vec<String> = Vec::new();
+                    if let Some(fl) = field_list {
+                        for qn in fl.qualified_names() {
+                            let text = qn.text();
+                            // Check if this name refers to a shape
+                            if let Some(shape_id) = resolve_shape_name(&text, pkg, interner, arenas, symbols) {
+                                let shape_fields = expand_shape_fields(shape_id, arenas, interner, symbols, diag);
+                                for sf in &shape_fields {
+                                    omitted_names.push(interner.resolve(sf.name).to_string());
+                                }
+                            } else {
+                                // It's a plain field name (last segment)
+                                let segments = qn.segments();
+                                if let Some(last) = segments.last() {
+                                    omitted_names.push(last.clone());
+                                }
+                            }
+                        }
+                    }
 
                     let source = &arenas.types[src_id];
                     let fields: Vec<FieldDef> = source
@@ -1395,6 +1551,80 @@ fn detect_cycles_dfs(
 
 // ── Pass 10: Back-references ───────────────────────────────────────────
 
+// ── Container nesting validation ──────────────────────────────────────
+
+/// Returns `true` if the type is a container (Array or Map).
+fn is_container(ty: &ResolvedType) -> bool {
+    matches!(ty, ResolvedType::Array(_) | ResolvedType::Map { .. })
+}
+
+/// Check whether a `ResolvedType` has nested containers and report an error.
+fn check_nesting_depth(
+    ty: &ResolvedType,
+    interner: &Interner,
+    parent_name: Sym,
+    field_name: Sym,
+    diag: &mut Diagnostics,
+) {
+    match ty {
+        ResolvedType::Array(inner) if is_container(inner) => {
+            diag.error(
+                "",
+                0..0,
+                format!(
+                    "nested container types are not supported in field `{}` of type `{}` — define a wrapper type for the inner container",
+                    interner.resolve(field_name),
+                    interner.resolve(parent_name),
+                ),
+            );
+        }
+        ResolvedType::Map { key, value, .. } => {
+            if is_container(key) {
+                diag.error(
+                    "",
+                    0..0,
+                    format!(
+                        "nested container types are not supported in map key of field `{}` of type `{}` — define a wrapper type for the inner container",
+                        interner.resolve(field_name),
+                        interner.resolve(parent_name),
+                    ),
+                );
+            }
+            if is_container(value) {
+                diag.error(
+                    "",
+                    0..0,
+                    format!(
+                        "nested container types are not supported in map value of field `{}` of type `{}` — define a wrapper type for the inner container",
+                        interner.resolve(field_name),
+                        interner.resolve(parent_name),
+                    ),
+                );
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Validate that container types are not nested (no `[][]T`, `[]map<K,V>`, `map<K,[]V>`, etc.).
+/// Ogham requires flat containers — extract nested containers to separate types.
+pub fn validate_container_nesting(
+    arenas: &Arenas,
+    interner: &Interner,
+    diag: &mut Diagnostics,
+) {
+    for (_, ty) in arenas.types.iter() {
+        for field in &ty.fields {
+            check_nesting_depth(&field.ty, interner, ty.full_name, field.name, diag);
+        }
+        for oneof in &ty.oneofs {
+            for field in &oneof.fields {
+                check_nesting_depth(&field.ty, interner, ty.full_name, field.name, diag);
+            }
+        }
+    }
+}
+
 pub fn compute_back_references(arenas: &mut Arenas) {
     // Collect all type→type references
     let mut refs: Vec<(TypeId, TypeId, Sym)> = Vec::new();
@@ -1420,6 +1650,224 @@ pub fn compute_back_references(arenas: &mut Arenas) {
                 referencing_type: referencing,
                 field_name,
             });
+        }
+    }
+}
+
+// ── Pass 13: Populate annotation params from AST ─────────────────────
+
+/// Populate `AnnotationDef.params` from the AST `AnnotationField` nodes.
+pub fn populate_annotation_params(
+    files: &[ParsedFile],
+    interner: &mut Interner,
+    arenas: &mut Arenas,
+    symbols: &SymbolTable,
+    diag: &mut Diagnostics,
+) {
+    for file in files {
+        let root = match ast::Root::cast(file.root.clone()) {
+            Some(r) => r,
+            None => continue,
+        };
+        let pkg = &file.package;
+        let imports = collect_imports(&root, interner, pkg);
+
+        for ann_decl in root.annotation_decls() {
+            let name_text = match ann_decl.name() {
+                Some(t) => t.text().to_string(),
+                None => continue,
+            };
+            let lib_sym = interner.intern(pkg);
+            let name_sym = interner.intern(&name_text);
+
+            let ids = match symbols.annotations.get(&(lib_sym, name_sym)) {
+                Some(ids) => ids.clone(),
+                None => continue,
+            };
+
+            let params: Vec<AnnotationParamDef> = ann_decl
+                .fields()
+                .iter()
+                .filter_map(|field| {
+                    // Skip inline types for now (handled separately in Phase 4)
+                    if field.inline_type().is_some() {
+                        return None;
+                    }
+                    let name = field.name()?.text().to_string();
+                    let name_sym = interner.intern(&name);
+                    let is_optional = field.is_optional();
+
+                    let ty = field
+                        .type_ref()
+                        .map(|tr| resolve_type_ref(&tr, interner, pkg, &imports, symbols, diag, &file.file_name))
+                        .unwrap_or(ResolvedType::Error);
+
+                    Some(AnnotationParamDef {
+                        name: name_sym,
+                        ty,
+                        is_optional,
+                        default_value: None,
+                    })
+                })
+                .collect();
+
+            // Apply params to matching annotation def(s) for this declaration.
+            // For overloaded annotations, find the one that matches this specific declaration
+            // by checking that it was allocated from this file (use last in the vec as heuristic).
+            // In practice each annotation_decl creates exactly one AnnotationDef.
+            if let Some(&id) = ids.last() {
+                arenas.annotation_defs[id].params = params;
+            }
+        }
+    }
+}
+
+// ── Pass 14: Annotation overload resolution + validation ─────────────
+
+/// Check that a `ResolvedType` matches a `TypeConstraint`.
+fn matches_constraint(
+    ty: &ResolvedType,
+    constraint: &TypeConstraint,
+    arenas: &Arenas,
+    interner: &Interner,
+) -> bool {
+    match constraint {
+        TypeConstraint::Any => true,
+        TypeConstraint::Scalar(expected) => matches!(ty, ResolvedType::Scalar(s) if s == expected),
+        TypeConstraint::Message => matches!(ty, ResolvedType::Message(_)),
+        TypeConstraint::Enum => matches!(ty, ResolvedType::Enum(_)),
+        TypeConstraint::Named(name_sym) => {
+            let expected_name = interner.resolve(*name_sym);
+            match ty {
+                ResolvedType::Message(id) => {
+                    let full = interner.resolve(arenas.types[*id].full_name);
+                    full == expected_name
+                        || full.ends_with(&format!(".{}", expected_name))
+                }
+                ResolvedType::Enum(id) => {
+                    let full = interner.resolve(arenas.enums[*id].full_name);
+                    full == expected_name
+                        || full.ends_with(&format!(".{}", expected_name))
+                }
+                _ => false,
+            }
+        }
+        TypeConstraint::Union(parts) => {
+            parts.iter().any(|c| matches_constraint(ty, c, arenas, interner))
+        }
+        TypeConstraint::Array(inner) => match ty {
+            ResolvedType::Array(elem) => matches_constraint(elem, inner, arenas, interner),
+            _ => false,
+        },
+        TypeConstraint::Map { key, value } => match ty {
+            ResolvedType::Map { key: k, value: v } => {
+                matches_constraint(k, key, arenas, interner)
+                    && matches_constraint(v, value, arenas, interner)
+            }
+            _ => false,
+        },
+    }
+}
+
+/// Score a constraint match (higher = more specific).
+fn constraint_specificity(constraint: &TypeConstraint) -> u32 {
+    match constraint {
+        TypeConstraint::Any => 0,
+        TypeConstraint::Message | TypeConstraint::Enum => 1,
+        TypeConstraint::Scalar(_) | TypeConstraint::Named(_) => 3,
+        TypeConstraint::Union(parts) => {
+            // Union specificity = max of parts (a smaller union is more specific)
+            2 + parts.iter().map(constraint_specificity).max().unwrap_or(0)
+        }
+        TypeConstraint::Array(inner) => 1 + constraint_specificity(inner),
+        TypeConstraint::Map { key, value } => {
+            1 + constraint_specificity(key) + constraint_specificity(value)
+        }
+    }
+}
+
+/// Resolve annotation overloads and validate annotation calls on all types.
+pub fn resolve_annotation_calls(
+    arenas: &mut Arenas,
+    symbols: &SymbolTable,
+    interner: &Interner,
+    diag: &mut Diagnostics,
+) {
+    // Collect all (type_id, field_index, annotation_index) triples to update
+    let type_ids: Vec<TypeId> = arenas.types.iter().map(|(id, _)| id).collect();
+
+    for type_id in type_ids {
+        let num_fields = arenas.types[type_id].fields.len();
+        for fi in 0..num_fields {
+            let field_ty = arenas.types[type_id].fields[fi].ty.clone();
+            let num_anns = arenas.types[type_id].fields[fi].annotations.len();
+
+            for ai in 0..num_anns {
+                let ann = &arenas.types[type_id].fields[fi].annotations[ai];
+                let key = (ann.library, ann.name);
+
+                if let Some(candidates) = symbols.annotations.get(&key) {
+                    // Find all overloads matching the field type
+                    let mut matches: Vec<(AnnotationDefId, u32)> = Vec::new();
+                    for &cand_id in candidates {
+                        let def = &arenas.annotation_defs[cand_id];
+                        for target in &def.targets {
+                            let constraint = target
+                                .type_constraint
+                                .as_ref()
+                                .unwrap_or(&TypeConstraint::Any);
+                            if matches_constraint(&field_ty, constraint, arenas, interner) {
+                                matches.push((cand_id, constraint_specificity(constraint)));
+                            }
+                        }
+                    }
+
+                    // Implicit element matching: if field is []T, try matching against T
+                    if matches.is_empty() {
+                        let element_ty = match &field_ty {
+                            ResolvedType::Array(inner) => Some(inner.as_ref()),
+                            ResolvedType::Map { value, .. } => Some(value.as_ref()),
+                            _ => None,
+                        };
+                        if let Some(elem) = element_ty {
+                            for &cand_id in candidates {
+                                let def = &arenas.annotation_defs[cand_id];
+                                for target in &def.targets {
+                                    let constraint = target
+                                        .type_constraint
+                                        .as_ref()
+                                        .unwrap_or(&TypeConstraint::Any);
+                                    if matches_constraint(elem, constraint, arenas, interner) {
+                                        matches.push((cand_id, constraint_specificity(constraint)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if matches.is_empty() {
+                        let lib = interner.resolve(ann.library);
+                        let name = interner.resolve(ann.name);
+                        diag.error("", 0..0, format!(
+                            "no overload of {}::{} matches the field type",
+                            lib, name
+                        ));
+                    } else {
+                        // Pick most specific
+                        matches.sort_by(|a, b| b.1.cmp(&a.1));
+                        if matches.len() > 1 && matches[0].1 == matches[1].1 {
+                            let lib = interner.resolve(ann.library);
+                            let name = interner.resolve(ann.name);
+                            diag.error("", 0..0, format!(
+                                "ambiguous overload for {}::{}",
+                                lib, name
+                            ));
+                        }
+                        arenas.types[type_id].fields[fi].annotations[ai].definition =
+                            Some(matches[0].0);
+                    }
+                }
+            }
         }
     }
 }
@@ -1454,7 +1902,9 @@ mod tests {
         let mut diag = Diagnostics::new();
 
         index::collect(&file, &mut interner, &mut arenas, &mut symbols, &mut diag);
-        populate_and_resolve(&[file], &mut interner, &mut arenas, &symbols, &mut diag);
+        let files = [file];
+        populate_and_resolve(&files, &mut interner, &mut arenas, &symbols, &mut diag);
+        resolve_rpcs(&files, &mut interner, &mut arenas, &symbols, &mut diag);
 
         (interner, arenas, symbols, diag)
     }

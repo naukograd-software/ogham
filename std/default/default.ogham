@@ -1,0 +1,38 @@
+package default;
+
+import github.com/oghamlang/std/time;
+
+// Default value for string fields.
+annotation Default for field(string) {
+    string value;
+}
+
+// Default value for boolean fields.
+annotation Default for field(bool) {
+    bool value;
+}
+
+// Default value for signed integer fields.
+annotation Default for field(int | int32 | int64 | i8 | int16) {
+    int64 value;
+}
+
+// Default value for unsigned integer fields.
+annotation Default for field(uint | uint32 | uint64 | uint8 | uint16 | byte) {
+    uint64 value;
+}
+
+// Default value for floating-point fields.
+annotation Default for field(float | double) {
+    double value;
+}
+
+// Default value for timestamp fields.
+// Use `now` for current-time default.
+enum TimestampPreset {
+    now = 1;
+}
+
+annotation Default for field(time.Timestamp) {
+    TimestampPreset value;
+}

@@ -15,6 +15,10 @@ pub struct OghamCompileRequest {
     /// Output directory specified in ogham.gen.yaml.
     #[prost(string, tag = "4")]
     pub output_dir: ::prost::alloc::string::String,
+    /// Module path from ogham.mod.yaml, e.g. "github.com/org/dashboard".
+    /// Used by plugins to compute import paths (module_path + "/" + out).
+    #[prost(string, tag = "5")]
+    pub module_path: ::prost::alloc::string::String,
 }
 /// Returned by a plugin via stdout.
 #[derive(Clone, PartialEq, ::prost::Message)]

@@ -45,7 +45,7 @@ oneof_decl        = { annotation_call } , "oneof" , identifier , "{" , { oneof_f
 
 oneof_field       = { annotation_call } , type_ref , identifier , "=" , integer , [ "<-" , mapping_source ] , ";" ;
 
-reserved_decl     = "@reserved" , "(" , integer , ")" , ";" ;
+reserved_decl     = "reserved" , integer , { "," , integer } , ";" ;
 
 (* === Shape === *)
 
@@ -120,7 +120,6 @@ annotation_value_list   = annotation_value , { "," , annotation_value } ;
 (* Built-in annotations *)
 builtin_annotation = "default" , "(" , literal , ")"
                    | "cast" , "(" , type_ref , ")"
-                   | "removed" , "(" , "fallback" , "=" , identifier , ")"
                    | "reserved" , "(" , integer , ")" ;
 
 (* === Type References === *)

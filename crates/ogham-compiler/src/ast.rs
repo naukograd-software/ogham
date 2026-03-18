@@ -205,9 +205,8 @@ impl SyntaxKind {
             | SyntaxKind::KwAnnotation | SyntaxKind::KwFor | SyntaxKind::KwVoid
             | SyntaxKind::KwStream | SyntaxKind::KwMap | SyntaxKind::KwPick
             | SyntaxKind::KwOmit | SyntaxKind::KwTrue | SyntaxKind::KwFalse
-            | SyntaxKind::KwNow | SyntaxKind::KwSelf | SyntaxKind::KwDefault
-            | SyntaxKind::KwCast | SyntaxKind::KwRemoved | SyntaxKind::KwReserved
-            | SyntaxKind::KwFallback
+            | SyntaxKind::KwSelf
+            | SyntaxKind::KwReserved
         )
     }
 }
@@ -386,9 +385,9 @@ impl ShapeField {
         first_ident_token(&self.syntax)
     }
 
-    /// Trailing annotations (e.g., `@default(now)` after field name).
+    /// Annotations preceding the shape field (e.g., `@default::Default(now)`).
     pub fn annotations(&self) -> Vec<AnnotationCall> {
-        children_of_type(&self.syntax)
+        preceding_annotations(&self.syntax)
     }
 }
 
@@ -605,6 +604,10 @@ impl InlineType {
     pub fn shape_injections(&self) -> Vec<ShapeInjection> {
         children_of_type(&self.syntax)
     }
+
+    pub fn oneofs(&self) -> Vec<OneofDecl> {
+        children_of_type(&self.syntax)
+    }
 }
 
 // ── Annotation definition ──────────────────────────────────────────────
@@ -633,23 +636,58 @@ ast_node!(AnnotationTargets, AnnotationTargets);
 
 impl AnnotationTargets {
     /// Target names as strings (e.g., `["type", "field", "enum"]`).
+    /// Backward-compatible: returns just the target kind names.
     pub fn targets(&self) -> Vec<String> {
-        self.syntax
-            .children_with_tokens()
-            .filter_map(|el| match el {
-                rowan::NodeOrToken::Token(t) => match t.kind() {
+        self.target_pairs().iter().map(|(name, _)| name.clone()).collect()
+    }
+
+    /// Returns (target_kind, optional_constraint_text) pairs.
+    /// E.g., `for field(string | int32) | type` → [("field", Some("string | int32")), ("type", None)]
+    pub fn target_pairs(&self) -> Vec<(String, Option<String>)> {
+        let mut result = Vec::new();
+        let mut last_target: Option<String> = None;
+
+        for el in self.syntax.children_with_tokens() {
+            match el {
+                rowan::NodeOrToken::Token(ref t) => match t.kind() {
                     SyntaxKind::Ident
                     | SyntaxKind::KwType
                     | SyntaxKind::KwShape
                     | SyntaxKind::KwEnum
                     | SyntaxKind::KwService
                     | SyntaxKind::KwRpc
-                    | SyntaxKind::KwOneof => Some(t.text().to_string()),
-                    _ => None,
+                    | SyntaxKind::KwOneof => {
+                        // Flush previous target without constraint
+                        if let Some(prev) = last_target.take() {
+                            result.push((prev, None));
+                        }
+                        last_target = Some(t.text().to_string());
+                    }
+                    _ => {}
                 },
-                _ => None,
-            })
-            .collect()
+                rowan::NodeOrToken::Node(ref n) => {
+                    if n.kind() == SyntaxKind::AnnotationTargetConstraint {
+                        // Attach constraint to the last target
+                        if let Some(target) = last_target.take() {
+                            // Extract constraint text (everything between parens)
+                            let full_text = n.text().to_string();
+                            let constraint = full_text
+                                .strip_prefix('(')
+                                .and_then(|s| s.strip_suffix(')'))
+                                .unwrap_or(&full_text)
+                                .trim()
+                                .to_string();
+                            result.push((target, Some(constraint)));
+                        }
+                    }
+                }
+            }
+        }
+        // Flush last target without constraint
+        if let Some(target) = last_target {
+            result.push((target, None));
+        }
+        result
     }
 }
 
@@ -716,28 +754,6 @@ impl InlineAnnotationType {
 ast_node!(AnnotationCall, AnnotationCall);
 
 impl AnnotationCall {
-    /// Returns `true` if this is a built-in annotation (`@default`, `@cast`, `@removed`, `@reserved`).
-    pub fn is_builtin(&self) -> bool {
-        self.syntax.children_with_tokens().any(|el| matches!(
-            el,
-            rowan::NodeOrToken::Token(ref t) if matches!(
-                t.kind(),
-                SyntaxKind::KwDefault | SyntaxKind::KwCast | SyntaxKind::KwRemoved | SyntaxKind::KwReserved
-            )
-        ))
-    }
-
-    /// For built-in annotations, the keyword name.
-    pub fn builtin_name(&self) -> Option<SyntaxToken> {
-        self.syntax.children_with_tokens().find_map(|el| match el {
-            rowan::NodeOrToken::Token(t) if matches!(
-                t.kind(),
-                SyntaxKind::KwDefault | SyntaxKind::KwCast | SyntaxKind::KwRemoved | SyntaxKind::KwReserved
-            ) => Some(t),
-            _ => None,
-        })
-    }
-
     /// For library annotations, returns `(library, name)`.
     pub fn library_name(&self) -> Option<(String, String)> {
         let idents: Vec<_> = self.syntax
@@ -909,12 +925,24 @@ impl QualifiedName {
 ast_node!(IdentList, IdentList);
 
 impl IdentList {
+    /// Return each entry as a QualifiedName node (works for both simple idents and dotted paths).
+    pub fn qualified_names(&self) -> Vec<QualifiedName> {
+        children_of_type(&self.syntax)
+    }
+
+    /// Backward-compatible: return the *last* segment of each entry as a bare Ident token.
+    /// For simple names this is the name itself; for `common.AuditFields` this returns `AuditFields`.
     pub fn names(&self) -> Vec<SyntaxToken> {
-        self.syntax
-            .children_with_tokens()
-            .filter_map(|el| match el {
-                rowan::NodeOrToken::Token(t) if t.kind() == SyntaxKind::Ident => Some(t),
-                _ => None,
+        self.qualified_names()
+            .iter()
+            .filter_map(|qn| {
+                qn.syntax()
+                    .children_with_tokens()
+                    .filter_map(|el| match el {
+                        rowan::NodeOrToken::Token(t) if t.kind() == SyntaxKind::Ident => Some(t),
+                        _ => None,
+                    })
+                    .last()
             })
             .collect()
     }
@@ -941,9 +969,23 @@ impl NestedEnumDecl {
 ast_node!(ReservedDecl, ReservedDecl);
 
 impl ReservedDecl {
+    /// Returns the first reserved field number (backward compat).
     pub fn field_number(&self) -> Option<u32> {
         child_token(&self.syntax, SyntaxKind::IntLiteral)
             .and_then(|t| t.text().parse().ok())
+    }
+
+    /// Returns all reserved field numbers: `reserved 2, 3, 5;` → [2, 3, 5]
+    pub fn field_numbers(&self) -> Vec<u32> {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(|el| match el {
+                rowan::NodeOrToken::Token(t) if t.kind() == SyntaxKind::IntLiteral => {
+                    t.text().parse().ok()
+                }
+                _ => None,
+            })
+            .collect()
     }
 }
 
@@ -1179,12 +1221,21 @@ mod tests {
     }
 
     #[test]
-    fn annotation_call_builtin() {
-        let root = parse_root("type T { string id = 1; @reserved(2) }");
+    fn reserved_single() {
+        let root = parse_root("type T { string id = 1; reserved 2; }");
         let body = root.type_decls()[0].body().unwrap();
         let reserved = body.reserved_decls();
         assert_eq!(reserved.len(), 1);
-        assert_eq!(reserved[0].field_number(), Some(2));
+        assert_eq!(reserved[0].field_numbers(), vec![2]);
+    }
+
+    #[test]
+    fn reserved_multiple() {
+        let root = parse_root("type T { string id = 1; reserved 2, 3, 5; }");
+        let body = root.type_decls()[0].body().unwrap();
+        let reserved = body.reserved_decls();
+        assert_eq!(reserved.len(), 1);
+        assert_eq!(reserved[0].field_numbers(), vec![2, 3, 5]);
     }
 
     #[test]

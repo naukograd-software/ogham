@@ -10,16 +10,21 @@ use ogham_proto::oghamproto::{compiler, ir};
 const MAX_DEPTH: usize = 8;
 
 /// Convert the resolved HIR into a proto `ir::Module`.
+///
+/// `module_info` is set on every top-level Type/Enum/Service so plugins know
+/// which module each declaration originates from.
 pub fn inflate(
     interner: &Interner,
     arenas: &Arenas,
     symbols: &SymbolTable,
     package: &str,
+    module_info: Option<ir::ModuleInfo>,
 ) -> ir::Module {
     let mut ctx = Ctx {
         interner,
         arenas,
         depth: 0,
+        module_info,
     };
 
     let types = symbols
@@ -52,6 +57,7 @@ struct Ctx<'a> {
     interner: &'a Interner,
     arenas: &'a Arenas,
     depth: usize,
+    module_info: Option<ir::ModuleInfo>,
 }
 
 impl<'a> Ctx<'a> {
@@ -138,6 +144,7 @@ impl<'a> Ctx<'a> {
                 .collect(),
             trace: ty.trace.as_ref().map(|t| self.inflate_type_trace(t)),
             location: None,
+            module: self.module_info.clone(),
         }
     }
 
@@ -186,14 +193,15 @@ impl<'a> Ctx<'a> {
                 .map(|v| ir::EnumValue {
                     name: self.sym(v.name),
                     number: v.number,
-                    is_removed: v.is_removed,
-                    fallback: v.fallback.map(|s| self.sym(s)).unwrap_or_default(),
+                    is_removed: false,
+                    fallback: String::new(),
                     annotations: self.inflate_annotations(&v.annotations),
                     location: None,
                 })
                 .collect(),
             annotations: self.inflate_annotations(&e.annotations),
             location: None,
+            module: self.module_info.clone(),
         }
     }
 
@@ -215,6 +223,7 @@ impl<'a> Ctx<'a> {
                 .collect(),
             annotations: self.inflate_annotations(&svc.annotations),
             location: None,
+            module: self.module_info.clone(),
         }
     }
 
@@ -279,8 +288,8 @@ impl<'a> Ctx<'a> {
                         .map(|v| ir::EnumValue {
                             name: self.sym(v.name),
                             number: v.number,
-                            is_removed: v.is_removed,
-                            fallback: v.fallback.map(|s| self.sym(s)).unwrap_or_default(),
+                            is_removed: false,
+                            fallback: String::new(),
                             annotations: self.inflate_annotations(&v.annotations),
                             location: None,
                         })
@@ -382,12 +391,14 @@ pub fn build_request(
     compiler_version: &str,
     options: std::collections::HashMap<String, String>,
     output_dir: &str,
+    module_path: &str,
 ) -> compiler::OghamCompileRequest {
     compiler::OghamCompileRequest {
         compiler_version: compiler_version.to_string(),
         module: Some(module),
         options,
         output_dir: output_dir.to_string(),
+        module_path: module_path.to_string(),
     }
 }
 
@@ -406,7 +417,7 @@ mod tests {
             "errors: {:?}",
             result.diagnostics.all()
         );
-        inflate(&result.interner, &result.arenas, &result.symbols, "example")
+        inflate(&result.interner, &result.arenas, &result.symbols, "example", None)
     }
 
     #[test]
@@ -505,7 +516,7 @@ type Order { Address billing = 1; }
         let module = compile_and_inflate(
             "package example;\ntype User { string name = 1; }",
         );
-        let req = build_request(module, "0.1.0", Default::default(), "gen/");
+        let req = build_request(module, "0.1.0", Default::default(), "gen/", "github.com/test/example");
         assert_eq!(req.compiler_version, "0.1.0");
         assert_eq!(req.output_dir, "gen/");
         assert!(req.module.is_some());

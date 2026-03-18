@@ -90,6 +90,9 @@ pub fn compile(sources: &[SourceFile]) -> CompileResult {
     // Phase 2: Populate fields + resolve type references (Pass 3)
     resolve::populate_and_resolve(&files, &mut interner, &mut arenas, &symbols, &mut diag);
 
+    // Container nesting validation
+    resolve::validate_container_nesting(&arenas, &interner, &mut diag);
+
     // Pass 4: Type alias expansion
     resolve::expand_type_aliases(&files, &mut interner, &mut arenas, &mut symbols, &mut diag);
 
@@ -108,10 +111,19 @@ pub fn compile(sources: &[SourceFile]) -> CompileResult {
     // Pass 9: Projection resolution
     resolve::resolve_projections(&mut interner, &mut arenas, &symbols, &mut diag);
 
-    // Pass 11: Cycle detection
+    // Pass 9.5: RPC param resolution (after all type expansions so Pick/Omit etc. are available)
+    resolve::resolve_rpcs(&files, &mut interner, &mut arenas, &symbols, &mut diag);
+
+    // Pass 10: Populate annotation params
+    resolve::populate_annotation_params(&files, &mut interner, &mut arenas, &symbols, &mut diag);
+
+    // Pass 11: Annotation overload resolution
+    resolve::resolve_annotation_calls(&mut arenas, &symbols, &interner, &mut diag);
+
+    // Pass 12: Cycle detection
     resolve::detect_cycles(&arenas, &interner, &mut diag);
 
-    // Pass 10: Back-references
+    // Pass 13: Back-references
     resolve::compute_back_references(&mut arenas);
 
     CompileResult {
@@ -314,5 +326,193 @@ service OrderAPI {
 "#,
         );
         assert!(!result.diagnostics.has_errors(), "errors: {:?}", result.diagnostics.all());
+    }
+
+    #[test]
+    fn annotation_overload_resolution() {
+        let result = compile(&[
+            SourceFile {
+                name: "validate.ogham".to_string(),
+                content: r#"package validate;
+annotation Range for field(int32 | int64) {
+    int64? min;
+    int64? max;
+}
+annotation Range for field(float | double) {
+    double? min;
+    double? max;
+}
+"#.to_string(),
+            },
+            SourceFile {
+                name: "model.ogham".to_string(),
+                content: r#"package example;
+import validate;
+type User {
+    @validate::Range(min=1, max=100)
+    int32 age = 1;
+
+    @validate::Range(min=0.0, max=1.0)
+    double score = 2;
+}
+"#.to_string(),
+            },
+        ]);
+        assert!(!result.diagnostics.has_errors(), "errors: {:?}", result.diagnostics.all());
+
+        // Check that annotations are linked to definitions
+        let key = result.interner.inner.get("example.User").unwrap();
+        let user_id = result.symbols.types[&key];
+        let age_ann = &result.arenas.types[user_id].fields[0].annotations[0];
+        assert!(age_ann.definition.is_some(), "age annotation should be linked to overload");
+        let score_ann = &result.arenas.types[user_id].fields[1].annotations[0];
+        assert!(score_ann.definition.is_some(), "score annotation should be linked to overload");
+
+        // Verify they resolved to different overloads
+        assert_ne!(age_ann.definition, score_ann.definition,
+            "int32 and double fields should resolve to different overloads");
+    }
+
+    #[test]
+    fn annotation_overload_no_match() {
+        let result = compile(&[
+            SourceFile {
+                name: "validate.ogham".to_string(),
+                content: r#"package validate;
+annotation Range for field(int32 | int64) {
+    int64? min;
+    int64? max;
+}
+"#.to_string(),
+            },
+            SourceFile {
+                name: "model.ogham".to_string(),
+                content: r#"package example;
+import validate;
+type User {
+    @validate::Range(min=1)
+    string name = 1;
+}
+"#.to_string(),
+            },
+        ]);
+        // Should have error: no overload of Range matches string
+        assert!(result.diagnostics.has_errors());
+    }
+
+    #[test]
+    fn annotation_params_populated() {
+        let result = compile_one(r#"package example;
+annotation Length for field(string) {
+    uint32? min;
+    uint32? max;
+}
+type User {
+    @example::Length(min=1, max=100)
+    string name = 1;
+}
+"#);
+        assert!(!result.diagnostics.has_errors(), "errors: {:?}", result.diagnostics.all());
+
+        // Check params are populated
+        let lib = result.interner.inner.get("example").unwrap();
+        let name = result.interner.inner.get("Length").unwrap();
+        let ids = &result.symbols.annotations[&(lib, name)];
+        let def = &result.arenas.annotation_defs[ids[0]];
+        assert_eq!(def.params.len(), 2);
+        assert_eq!(result.interner.resolve(def.params[0].name), "min");
+        assert_eq!(result.interner.resolve(def.params[1].name), "max");
+    }
+
+    #[test]
+    fn annotation_param_annotations_projection() {
+        let result = compile_one(r#"package example;
+annotation Items for field([]any) {
+    uint32? min;
+    uint32? max;
+}
+type User {
+    @example::Items(min=1)
+    []string tags = 1;
+}
+"#);
+        assert!(!result.diagnostics.has_errors(), "errors: {:?}", result.diagnostics.all());
+
+        // Items should match []string via []any constraint
+        let key = result.interner.inner.get("example.User").unwrap();
+        let user_id = result.symbols.types[&key];
+        let ann = &result.arenas.types[user_id].fields[0].annotations[0];
+        assert!(ann.definition.is_some(), "Items annotation should be linked");
+    }
+
+    #[test]
+    fn overloaded_validate_range_string_error() {
+        // Range has overloads for int and float but NOT string
+        let result = compile(&[
+            SourceFile {
+                name: "v.ogham".to_string(),
+                content: r#"package v;
+annotation Range for field(int32 | int64) { int64? min; }
+annotation Range for field(float | double) { double? min; }
+"#.to_string(),
+            },
+            SourceFile {
+                name: "m.ogham".to_string(),
+                content: r#"package m;
+import v;
+type T {
+    @v::Range(min=1)
+    string name = 1;
+}
+"#.to_string(),
+            },
+        ]);
+        assert!(result.diagnostics.has_errors(), "Range on string should be an error");
+    }
+
+    #[test]
+    fn overloaded_validate_range_int_ok() {
+        let result = compile(&[
+            SourceFile {
+                name: "v.ogham".to_string(),
+                content: r#"package v;
+annotation Range for field(int32 | int64) { int64? min; }
+annotation Range for field(float | double) { double? min; }
+"#.to_string(),
+            },
+            SourceFile {
+                name: "m.ogham".to_string(),
+                content: r#"package m;
+import v;
+type T {
+    @v::Range(min=1)
+    int32 age = 1;
+}
+"#.to_string(),
+            },
+        ]);
+        assert!(!result.diagnostics.has_errors(), "errors: {:?}", result.diagnostics.all());
+    }
+
+    #[test]
+    fn nested_container_error() {
+        let result = compile_one(r#"package example;
+type Bad {
+    [][]string matrix = 1;
+}
+"#);
+        assert!(result.diagnostics.has_errors(), "nested containers should be rejected");
+    }
+
+    #[test]
+    fn flat_container_ok() {
+        let result = compile_one(r#"package example;
+type Good {
+    []string tags = 1;
+    map<string, int32> scores = 2;
+    []int32 numbers = 3;
+}
+"#);
+        assert!(!result.diagnostics.has_errors(), "flat containers should be ok: {:?}", result.diagnostics.all());
     }
 }

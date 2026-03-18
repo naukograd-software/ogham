@@ -663,7 +663,7 @@ impl LanguageServer for Backend {
 
         let mut actions = Vec::new();
 
-        // Suggest adding @reserved for gaps in field numbering
+        // Suggest adding reserved for gaps in field numbering
         if let Some(root) = ast::Root::cast(doc.parse.syntax()) {
             for ty in root.type_decls() {
                 if let Some(body) = ty.body() {
@@ -680,7 +680,7 @@ impl LanguageServer for Backend {
                                 let type_name = ty.name().map(|t| t.text().to_string()).unwrap_or_default();
                                 for gap in (w[0] + 1)..w[1] {
                                     actions.push(CodeActionOrCommand::CodeAction(CodeAction {
-                                        title: format!("Add @reserved({}) to {}", gap, type_name),
+                                        title: format!("Add reserved {} to {}", gap, type_name),
                                         kind: Some(CodeActionKind::QUICKFIX),
                                         diagnostics: None,
                                         edit: None, // simplified — would need TextEdit

@@ -1066,6 +1066,9 @@ impl serde::Serialize for Enum {
         if self.location.is_some() {
             len += 1;
         }
+        if self.module.is_some() {
+            len += 1;
+        }
         let mut struct_ser = serializer.serialize_struct("oghamproto.ir.Enum", len)?;
         if !self.name.is_empty() {
             struct_ser.serialize_field("name", &self.name)?;
@@ -1081,6 +1084,9 @@ impl serde::Serialize for Enum {
         }
         if let Some(v) = self.location.as_ref() {
             struct_ser.serialize_field("location", v)?;
+        }
+        if let Some(v) = self.module.as_ref() {
+            struct_ser.serialize_field("module", v)?;
         }
         struct_ser.end()
     }
@@ -1098,6 +1104,7 @@ impl<'de> serde::Deserialize<'de> for Enum {
             "values",
             "annotations",
             "location",
+            "module",
         ];
 
         #[allow(clippy::enum_variant_names)]
@@ -1107,6 +1114,7 @@ impl<'de> serde::Deserialize<'de> for Enum {
             Values,
             Annotations,
             Location,
+            Module,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -1133,6 +1141,7 @@ impl<'de> serde::Deserialize<'de> for Enum {
                             "values" => Ok(GeneratedField::Values),
                             "annotations" => Ok(GeneratedField::Annotations),
                             "location" => Ok(GeneratedField::Location),
+                            "module" => Ok(GeneratedField::Module),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -1157,6 +1166,7 @@ impl<'de> serde::Deserialize<'de> for Enum {
                 let mut values__ = None;
                 let mut annotations__ = None;
                 let mut location__ = None;
+                let mut module__ = None;
                 while let Some(k) = map_.next_key()? {
                     match k {
                         GeneratedField::Name => {
@@ -1189,6 +1199,12 @@ impl<'de> serde::Deserialize<'de> for Enum {
                             }
                             location__ = map_.next_value()?;
                         }
+                        GeneratedField::Module => {
+                            if module__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("module"));
+                            }
+                            module__ = map_.next_value()?;
+                        }
                     }
                 }
                 Ok(Enum {
@@ -1197,6 +1213,7 @@ impl<'de> serde::Deserialize<'de> for Enum {
                     values: values__.unwrap_or_default(),
                     annotations: annotations__.unwrap_or_default(),
                     location: location__,
+                    module: module__,
                 })
             }
         }
@@ -2640,6 +2657,149 @@ impl<'de> serde::Deserialize<'de> for Module {
         deserializer.deserialize_struct("oghamproto.ir.Module", FIELDS, GeneratedVisitor)
     }
 }
+impl serde::Serialize for ModuleInfo {
+    #[allow(deprecated)]
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut len = 0;
+        if !self.module_path.is_empty() {
+            len += 1;
+        }
+        if !self.package.is_empty() {
+            len += 1;
+        }
+        if !self.version.is_empty() {
+            len += 1;
+        }
+        if self.generate {
+            len += 1;
+        }
+        let mut struct_ser = serializer.serialize_struct("oghamproto.ir.ModuleInfo", len)?;
+        if !self.module_path.is_empty() {
+            struct_ser.serialize_field("modulePath", &self.module_path)?;
+        }
+        if !self.package.is_empty() {
+            struct_ser.serialize_field("package", &self.package)?;
+        }
+        if !self.version.is_empty() {
+            struct_ser.serialize_field("version", &self.version)?;
+        }
+        if self.generate {
+            struct_ser.serialize_field("generate", &self.generate)?;
+        }
+        struct_ser.end()
+    }
+}
+impl<'de> serde::Deserialize<'de> for ModuleInfo {
+    #[allow(deprecated)]
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        const FIELDS: &[&str] = &[
+            "module_path",
+            "modulePath",
+            "package",
+            "version",
+            "generate",
+        ];
+
+        #[allow(clippy::enum_variant_names)]
+        enum GeneratedField {
+            ModulePath,
+            Package,
+            Version,
+            Generate,
+        }
+        impl<'de> serde::Deserialize<'de> for GeneratedField {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                struct GeneratedVisitor;
+
+                impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
+                    type Value = GeneratedField;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        write!(formatter, "expected one of: {:?}", &FIELDS)
+                    }
+
+                    #[allow(unused_variables)]
+                    fn visit_str<E>(self, value: &str) -> std::result::Result<GeneratedField, E>
+                    where
+                        E: serde::de::Error,
+                    {
+                        match value {
+                            "modulePath" | "module_path" => Ok(GeneratedField::ModulePath),
+                            "package" => Ok(GeneratedField::Package),
+                            "version" => Ok(GeneratedField::Version),
+                            "generate" => Ok(GeneratedField::Generate),
+                            _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+                deserializer.deserialize_identifier(GeneratedVisitor)
+            }
+        }
+        struct GeneratedVisitor;
+        impl<'de> serde::de::Visitor<'de> for GeneratedVisitor {
+            type Value = ModuleInfo;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str("struct oghamproto.ir.ModuleInfo")
+            }
+
+            fn visit_map<V>(self, mut map_: V) -> std::result::Result<ModuleInfo, V::Error>
+                where
+                    V: serde::de::MapAccess<'de>,
+            {
+                let mut module_path__ = None;
+                let mut package__ = None;
+                let mut version__ = None;
+                let mut generate__ = None;
+                while let Some(k) = map_.next_key()? {
+                    match k {
+                        GeneratedField::ModulePath => {
+                            if module_path__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("modulePath"));
+                            }
+                            module_path__ = Some(map_.next_value()?);
+                        }
+                        GeneratedField::Package => {
+                            if package__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("package"));
+                            }
+                            package__ = Some(map_.next_value()?);
+                        }
+                        GeneratedField::Version => {
+                            if version__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("version"));
+                            }
+                            version__ = Some(map_.next_value()?);
+                        }
+                        GeneratedField::Generate => {
+                            if generate__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("generate"));
+                            }
+                            generate__ = Some(map_.next_value()?);
+                        }
+                    }
+                }
+                Ok(ModuleInfo {
+                    module_path: module_path__.unwrap_or_default(),
+                    package: package__.unwrap_or_default(),
+                    version: version__.unwrap_or_default(),
+                    generate: generate__.unwrap_or_default(),
+                })
+            }
+        }
+        deserializer.deserialize_struct("oghamproto.ir.ModuleInfo", FIELDS, GeneratedVisitor)
+    }
+}
 impl serde::Serialize for OneofField {
     #[allow(deprecated)]
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
@@ -3597,6 +3757,9 @@ impl serde::Serialize for Service {
         if self.location.is_some() {
             len += 1;
         }
+        if self.module.is_some() {
+            len += 1;
+        }
         let mut struct_ser = serializer.serialize_struct("oghamproto.ir.Service", len)?;
         if !self.name.is_empty() {
             struct_ser.serialize_field("name", &self.name)?;
@@ -3612,6 +3775,9 @@ impl serde::Serialize for Service {
         }
         if let Some(v) = self.location.as_ref() {
             struct_ser.serialize_field("location", v)?;
+        }
+        if let Some(v) = self.module.as_ref() {
+            struct_ser.serialize_field("module", v)?;
         }
         struct_ser.end()
     }
@@ -3629,6 +3795,7 @@ impl<'de> serde::Deserialize<'de> for Service {
             "rpcs",
             "annotations",
             "location",
+            "module",
         ];
 
         #[allow(clippy::enum_variant_names)]
@@ -3638,6 +3805,7 @@ impl<'de> serde::Deserialize<'de> for Service {
             Rpcs,
             Annotations,
             Location,
+            Module,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -3664,6 +3832,7 @@ impl<'de> serde::Deserialize<'de> for Service {
                             "rpcs" => Ok(GeneratedField::Rpcs),
                             "annotations" => Ok(GeneratedField::Annotations),
                             "location" => Ok(GeneratedField::Location),
+                            "module" => Ok(GeneratedField::Module),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -3688,6 +3857,7 @@ impl<'de> serde::Deserialize<'de> for Service {
                 let mut rpcs__ = None;
                 let mut annotations__ = None;
                 let mut location__ = None;
+                let mut module__ = None;
                 while let Some(k) = map_.next_key()? {
                     match k {
                         GeneratedField::Name => {
@@ -3720,6 +3890,12 @@ impl<'de> serde::Deserialize<'de> for Service {
                             }
                             location__ = map_.next_value()?;
                         }
+                        GeneratedField::Module => {
+                            if module__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("module"));
+                            }
+                            module__ = map_.next_value()?;
+                        }
                     }
                 }
                 Ok(Service {
@@ -3728,6 +3904,7 @@ impl<'de> serde::Deserialize<'de> for Service {
                     rpcs: rpcs__.unwrap_or_default(),
                     annotations: annotations__.unwrap_or_default(),
                     location: location__,
+                    module: module__,
                 })
             }
         }
@@ -3940,6 +4117,9 @@ impl serde::Serialize for Type {
         if self.location.is_some() {
             len += 1;
         }
+        if self.module.is_some() {
+            len += 1;
+        }
         let mut struct_ser = serializer.serialize_struct("oghamproto.ir.Type", len)?;
         if !self.name.is_empty() {
             struct_ser.serialize_field("name", &self.name)?;
@@ -3971,6 +4151,9 @@ impl serde::Serialize for Type {
         if let Some(v) = self.location.as_ref() {
             struct_ser.serialize_field("location", v)?;
         }
+        if let Some(v) = self.module.as_ref() {
+            struct_ser.serialize_field("module", v)?;
+        }
         struct_ser.end()
     }
 }
@@ -3995,6 +4178,7 @@ impl<'de> serde::Deserialize<'de> for Type {
             "backReferences",
             "trace",
             "location",
+            "module",
         ];
 
         #[allow(clippy::enum_variant_names)]
@@ -4009,6 +4193,7 @@ impl<'de> serde::Deserialize<'de> for Type {
             BackReferences,
             Trace,
             Location,
+            Module,
         }
         impl<'de> serde::Deserialize<'de> for GeneratedField {
             fn deserialize<D>(deserializer: D) -> std::result::Result<GeneratedField, D::Error>
@@ -4040,6 +4225,7 @@ impl<'de> serde::Deserialize<'de> for Type {
                             "backReferences" | "back_references" => Ok(GeneratedField::BackReferences),
                             "trace" => Ok(GeneratedField::Trace),
                             "location" => Ok(GeneratedField::Location),
+                            "module" => Ok(GeneratedField::Module),
                             _ => Err(serde::de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -4069,6 +4255,7 @@ impl<'de> serde::Deserialize<'de> for Type {
                 let mut back_references__ = None;
                 let mut trace__ = None;
                 let mut location__ = None;
+                let mut module__ = None;
                 while let Some(k) = map_.next_key()? {
                     match k {
                         GeneratedField::Name => {
@@ -4131,6 +4318,12 @@ impl<'de> serde::Deserialize<'de> for Type {
                             }
                             location__ = map_.next_value()?;
                         }
+                        GeneratedField::Module => {
+                            if module__.is_some() {
+                                return Err(serde::de::Error::duplicate_field("module"));
+                            }
+                            module__ = map_.next_value()?;
+                        }
                     }
                 }
                 Ok(Type {
@@ -4144,6 +4337,7 @@ impl<'de> serde::Deserialize<'de> for Type {
                     back_references: back_references__.unwrap_or_default(),
                     trace: trace__,
                     location: location__,
+                    module: module__,
                 })
             }
         }

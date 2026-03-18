@@ -46,22 +46,12 @@ pub enum Token {
     KwTrue,
     #[token("false")]
     KwFalse,
-    #[token("now")]
-    KwNow,
     #[token("self")]
     KwSelf,
 
     // ── Built-in annotation names (after @) ────────────────────────────
-    #[token("default")]
-    KwDefault,
-    #[token("cast")]
-    KwCast,
-    #[token("removed")]
-    KwRemoved,
     #[token("reserved")]
     KwReserved,
-    #[token("fallback")]
-    KwFallback,
 
     // ── Punctuation ────────────────────────────────────────────────────
     #[token("{")]
@@ -406,16 +396,16 @@ mod tests {
     }
 
     #[test]
-    fn enum_removed() {
-        let tokens = lex_meaningful("@removed(fallback=Active) Deleted=3;");
+    fn enum_annotation() {
+        let tokens = lex_meaningful("@deprecated(reason=Active) Deleted=3;");
         let kinds: Vec<Token> = tokens.iter().map(|(k, _)| *k).collect();
         assert_eq!(
             kinds,
             vec![
                 Token::At,
-                Token::KwRemoved,
+                Token::Ident,     // deprecated
                 Token::LParen,
-                Token::KwFallback,
+                Token::Ident,     // reason
                 Token::Eq,
                 Token::Ident,     // Active
                 Token::RParen,
@@ -576,25 +566,9 @@ mod tests {
             kinds,
             vec![
                 Token::At,
-                Token::KwDefault,
+                Token::Ident,   // "default" is now a regular identifier
                 Token::LParen,
-                Token::KwNow,
-                Token::RParen,
-            ]
-        );
-    }
-
-    #[test]
-    fn builtin_annotation_cast() {
-        let tokens = lex_meaningful("@cast(int32)");
-        let kinds: Vec<Token> = tokens.iter().map(|(k, _)| *k).collect();
-        assert_eq!(
-            kinds,
-            vec![
-                Token::At,
-                Token::KwCast,
-                Token::LParen,
-                Token::Ident,  // int32
+                Token::Ident,   // "now" is now a regular identifier
                 Token::RParen,
             ]
         );

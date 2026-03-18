@@ -1,0 +1,83 @@
+package common;
+
+// ============================================================================
+// Custom annotation definitions for the logistics system.
+// Demonstrates: annotation declaration for all targets, inline types,
+// shape references, optional params, default values, maps.
+// ============================================================================
+
+// ── Database mapping annotations ────────────────────────────────────────
+
+annotation Table for type {
+    string table_name;
+    string schema = "public";
+    bool partitioned = false;
+}
+
+annotation Column for field {
+    string column_name;
+    bool primary_key = false;
+    bool indexed = false;
+    string? default_expr;
+}
+
+annotation OneOf for oneof {
+    string discriminator_column;
+    bool ignore = false;
+}
+
+annotation OneOfField for oneof_field {
+    string column_name;
+}
+
+annotation EnumMapping for enum {
+    bool store_as_string = false;
+    string? pg_type;
+}
+
+annotation EnumValueMapping for enum_value {
+    string? db_value;
+}
+
+// ── Service-level annotations ───────────────────────────────────────────
+
+annotation ServiceConfig for service {
+    string base_url;
+    int32 default_timeout_ms = 5000;
+}
+
+annotation MethodConfig for rpc {
+    string http_method = "POST";
+    string http_path;
+    bool idempotent = false;
+    int32? timeout_ms;
+}
+
+// ── Shape-level annotation ──────────────────────────────────────────────
+
+annotation Auditable for shape {
+    string audit_table;
+}
+
+// ── Complex annotation with inline types and all features ───────────────
+
+shape RetryPolicy {
+    int32 max_retries;
+    int32 backoff_ms;
+}
+
+annotation Pipeline for type {
+    string pipeline_name;
+    bool async = false;
+    map<string, string> env;
+    RetryPolicy retry;
+    // Inline nested type in annotation definition
+    dead_letter: {
+        string topic;
+        int32 max_age_hours;
+        alert_config: {
+            string channel;
+            bool enabled;
+        }
+    }
+}

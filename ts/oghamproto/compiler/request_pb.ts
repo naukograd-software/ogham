@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file oghamproto/compiler/request.proto.
  */
 export const file_oghamproto_compiler_request: GenFile = /*@__PURE__*/
-  fileDesc("CiFvZ2hhbXByb3RvL2NvbXBpbGVyL3JlcXVlc3QucHJvdG8SE29naGFtcHJvdG8uY29tcGlsZXIi4gEKE09naGFtQ29tcGlsZVJlcXVlc3QSGAoQY29tcGlsZXJfdmVyc2lvbhgBIAEoCRIlCgZtb2R1bGUYAiABKAsyFS5vZ2hhbXByb3RvLmlyLk1vZHVsZRJGCgdvcHRpb25zGAMgAygLMjUub2doYW1wcm90by5jb21waWxlci5PZ2hhbUNvbXBpbGVSZXF1ZXN0Lk9wdGlvbnNFbnRyeRISCgpvdXRwdXRfZGlyGAQgASgJGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBInwKFE9naGFtQ29tcGlsZVJlc3BvbnNlEjEKBWZpbGVzGAEgAygLMiIub2doYW1wcm90by5jb21waWxlci5HZW5lcmF0ZWRGaWxlEjEKBmVycm9ycxgCIAMoCzIhLm9naGFtcHJvdG8uY29tcGlsZXIuQ29tcGlsZUVycm9yIj4KDUdlbmVyYXRlZEZpbGUSDAoEbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMEg4KBmFwcGVuZBgDIAEoCCJ7CgxDb21waWxlRXJyb3ISDwoHbWVzc2FnZRgBIAEoCRIvCghzZXZlcml0eRgCIAEoDjIdLm9naGFtcHJvdG8uY29tcGlsZXIuU2V2ZXJpdHkSEwoLc291cmNlX3R5cGUYAyABKAkSFAoMc291cmNlX2ZpZWxkGAQgASgJKj8KCFNldmVyaXR5EhEKDVNFVkVSSVRZX05PTkUQABIJCgVFUlJPUhABEgsKB1dBUk5JTkcQAhIICgRJTkZPEAMycgoOT2doYW1QbHVnaW5BUEkSYAoHQ29tcGlsZRIoLm9naGFtcHJvdG8uY29tcGlsZXIuT2doYW1Db21waWxlUmVxdWVzdBopLm9naGFtcHJvdG8uY29tcGlsZXIuT2doYW1Db21waWxlUmVzcG9uc2UiAEItWitnaXRodWIuY29tL29naGFtbGFuZy9nby9vZ2hhbXByb3RvL2NvbXBpbGVyYgZwcm90bzM", [file_oghamproto_ir_types]);
+  fileDesc("CiFvZ2hhbXByb3RvL2NvbXBpbGVyL3JlcXVlc3QucHJvdG8SE29naGFtcHJvdG8uY29tcGlsZXIi9wEKE09naGFtQ29tcGlsZVJlcXVlc3QSGAoQY29tcGlsZXJfdmVyc2lvbhgBIAEoCRIlCgZtb2R1bGUYAiABKAsyFS5vZ2hhbXByb3RvLmlyLk1vZHVsZRJGCgdvcHRpb25zGAMgAygLMjUub2doYW1wcm90by5jb21waWxlci5PZ2hhbUNvbXBpbGVSZXF1ZXN0Lk9wdGlvbnNFbnRyeRISCgpvdXRwdXRfZGlyGAQgASgJEhMKC21vZHVsZV9wYXRoGAUgASgJGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBInwKFE9naGFtQ29tcGlsZVJlc3BvbnNlEjEKBWZpbGVzGAEgAygLMiIub2doYW1wcm90by5jb21waWxlci5HZW5lcmF0ZWRGaWxlEjEKBmVycm9ycxgCIAMoCzIhLm9naGFtcHJvdG8uY29tcGlsZXIuQ29tcGlsZUVycm9yIj4KDUdlbmVyYXRlZEZpbGUSDAoEbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMEg4KBmFwcGVuZBgDIAEoCCJ7CgxDb21waWxlRXJyb3ISDwoHbWVzc2FnZRgBIAEoCRIvCghzZXZlcml0eRgCIAEoDjIdLm9naGFtcHJvdG8uY29tcGlsZXIuU2V2ZXJpdHkSEwoLc291cmNlX3R5cGUYAyABKAkSFAoMc291cmNlX2ZpZWxkGAQgASgJKj8KCFNldmVyaXR5EhEKDVNFVkVSSVRZX05PTkUQABIJCgVFUlJPUhABEgsKB1dBUk5JTkcQAhIICgRJTkZPEAMycgoOT2doYW1QbHVnaW5BUEkSYAoHQ29tcGlsZRIoLm9naGFtcHJvdG8uY29tcGlsZXIuT2doYW1Db21waWxlUmVxdWVzdBopLm9naGFtcHJvdG8uY29tcGlsZXIuT2doYW1Db21waWxlUmVzcG9uc2UiAEItWitnaXRodWIuY29tL29naGFtbGFuZy9nby9vZ2hhbXByb3RvL2NvbXBpbGVyYgZwcm90bzM", [file_oghamproto_ir_types]);
 
 /**
  * Sent to a plugin via stdin. Contains the fully resolved IR.
@@ -47,6 +47,14 @@ export type OghamCompileRequest = Message<"oghamproto.compiler.OghamCompileReque
    * @generated from field: string output_dir = 4;
    */
   outputDir: string;
+
+  /**
+   * Module path from ogham.mod.yaml, e.g. "github.com/org/dashboard".
+   * Used by plugins to compute import paths (module_path + "/" + out).
+   *
+   * @generated from field: string module_path = 5;
+   */
+  modulePath: string;
 };
 
 /**
@@ -82,6 +90,14 @@ export type OghamCompileRequestJson = {
    * @generated from field: string output_dir = 4;
    */
   outputDir?: string;
+
+  /**
+   * Module path from ogham.mod.yaml, e.g. "github.com/org/dashboard".
+   * Used by plugins to compute import paths (module_path + "/" + out).
+   *
+   * @generated from field: string module_path = 5;
+   */
+  modulePath?: string;
 };
 
 export type OghamCompileRequestValid = OghamCompileRequest;
