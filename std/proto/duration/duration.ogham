@@ -1,0 +1,14 @@
+package proto_duration;
+
+import github.com/oghamlang/std/validate;
+
+// Duration — compatible with google.protobuf.Duration.
+// Signed duration in seconds + nanos.
+type Duration {
+    // Signed seconds of the span of time.
+    int64 seconds = 1;
+    // Signed fractions of a second at nanosecond resolution.
+    // Must have the same sign as seconds (or be zero).
+    @validate::Range(min=-999999999, max=999999999)
+    int32 nanos = 2;
+}

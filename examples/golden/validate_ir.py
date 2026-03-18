@@ -10,6 +10,9 @@ import json
 import sys
 from pathlib import Path
 
+M = "github.com/oghamlang/examples/golden/"  # module prefix
+S = "github.com/oghamlang/std/"              # std prefix
+
 ir = json.load(open(Path(__file__).parent / "ir.json"))
 
 types_by_name = {t["fullName"]: t for t in ir["types"]}
@@ -144,56 +147,56 @@ print("--- 1. Types exist ---")
 
 for name in [
     # common
-    "common.Id", "common.TrackingNumber", "common.WeightKg",
-    "common.IsFragile", "common.Barcode",
-    "common.Address", "common.ContactInfo", "common.Cost",
-    "common.TimeWindow", "common.Dimensions", "common.Metadata",
-    "common.SystemLimits",
+    f"{M}common.Id", f"{M}common.TrackingNumber", f"{M}common.WeightKg",
+    f"{M}common.IsFragile", f"{M}common.Barcode",
+    f"{M}common.Address", f"{M}common.ContactInfo", f"{M}common.Cost",
+    f"{M}common.TimeWindow", f"{M}common.Dimensions", f"{M}common.Metadata",
+    f"{M}common.SystemLimits",
     # fleet
-    "fleet.Vehicle", "fleet.Driver", "fleet.GpsPosition",
-    "fleet.DriverAssignment", "fleet.Vehicle.MaintenanceRecord",
+    f"{M}fleet.Vehicle", f"{M}fleet.Driver", f"{M}fleet.GpsPosition",
+    f"{M}fleet.DriverAssignment", f"{M}fleet.Vehicle.MaintenanceRecord",
     # warehouse
-    "warehouse.Warehouse", "warehouse.InventoryItem",
-    "warehouse.StockMovement", "warehouse.Warehouse.Zone",
+    f"{M}warehouse.Warehouse", f"{M}warehouse.InventoryItem",
+    f"{M}warehouse.StockMovement", f"{M}warehouse.Warehouse.Zone",
     # shipment
-    "shipment.Package", "shipment.Shipment",
-    "shipment.StandardDelivery", "shipment.ExpressDelivery",
-    "shipment.ScheduledDelivery", "shipment.TrackingEvent",
-    "shipment.ShipmentMetrics",
+    f"{M}shipment.Package", f"{M}shipment.Shipment",
+    f"{M}shipment.StandardDelivery", f"{M}shipment.ExpressDelivery",
+    f"{M}shipment.ScheduledDelivery", f"{M}shipment.TrackingEvent",
+    f"{M}shipment.ShipmentMetrics",
     # shipment projections
-    "shipment.ShipmentSummary", "shipment.ShipmentFlatRow",
-    "shipment.DeliveryCostView", "shipment.DeliveryFlat",
-    "shipment.ShipmentDashboard", "shipment.ShipmentSearch",
-    "shipment.ShipmentCard",
+    f"{M}shipment.ShipmentSummary", f"{M}shipment.ShipmentFlatRow",
+    f"{M}shipment.DeliveryCostView", f"{M}shipment.DeliveryFlat",
+    f"{M}shipment.ShipmentDashboard", f"{M}shipment.ShipmentSearch",
+    f"{M}shipment.ShipmentCard",
     # shipment Pick/Omit
-    "shipment.ShipmentPublic", "shipment.ShipmentWithoutCosts",
-    "shipment.ShipmentNoAudit",
+    f"{M}shipment.ShipmentPublic", f"{M}shipment.ShipmentWithoutCosts",
+    f"{M}shipment.ShipmentNoAudit",
     # order
-    "order.Order", "order.LineItem", "order.CardPayment",
-    "order.BankPayment", "order.OrderPaymentFlat", "order.OrderRow",
-    "order.PaginatedOrders", "order.OrderPublic", "order.OrderWithoutPayment",
+    f"{M}order.Order", f"{M}order.LineItem", f"{M}order.CardPayment",
+    f"{M}order.BankPayment", f"{M}order.OrderPaymentFlat", f"{M}order.OrderRow",
+    f"{M}order.PaginatedOrders", f"{M}order.OrderPublic", f"{M}order.OrderWithoutPayment",
     # golden (api)
-    "golden.ListResponse",
+    f"{M}golden.ListResponse",
     # generic expansions
-    "golden.ListResponseVehicle", "golden.ListResponseInventoryItem",
-    "golden.ListResponseShipmentSummary", "golden.ListResponseOrderPublic",
+    f"{M}golden.ListResponseVehicle", f"{M}golden.ListResponseInventoryItem",
+    f"{M}golden.ListResponseShipmentSummary", f"{M}golden.ListResponseOrderPublic",
 ]:
     get_type(name)
 
 print("--- 1b. Enums exist ---")
 for name in [
-    "fleet.VehicleType", "fleet.VehicleStatus", "fleet.DriverLicense",
-    "fleet.Driver.EmploymentStatus",
-    "warehouse.InventoryStatus", "warehouse.MovementType",
-    "warehouse.Warehouse.Zone.ZoneTemperature",
-    "shipment.ShipmentStatus", "shipment.PackageSize",
-    "order.OrderStatus", "order.PaymentMethod",
+    f"{M}fleet.VehicleType", f"{M}fleet.VehicleStatus", f"{M}fleet.DriverLicense",
+    f"{M}fleet.Driver.EmploymentStatus",
+    f"{M}warehouse.InventoryStatus", f"{M}warehouse.MovementType",
+    f"{M}warehouse.Warehouse.Zone.ZoneTemperature",
+    f"{M}shipment.ShipmentStatus", f"{M}shipment.PackageSize",
+    f"{M}order.OrderStatus", f"{M}order.PaymentMethod",
 ]:
     get_enum(name)
 
 print("--- 1c. Services exist ---")
-for name in ["golden.FleetService", "golden.WarehouseService",
-             "golden.ShipmentService", "golden.OrderService"]:
+for name in [f"{M}golden.FleetService", f"{M}golden.WarehouseService",
+             f"{M}golden.ShipmentService", f"{M}golden.OrderService"]:
     get_service(name)
 
 # ============================================================================
@@ -201,7 +204,7 @@ for name in ["golden.FleetService", "golden.WarehouseService",
 # ============================================================================
 print("--- 2. Primitive types (SystemLimits) ---")
 
-sl = get_type("common.SystemLimits")
+sl = get_type(f"{M}common.SystemLimits")
 if sl:
     expected = [
         "enabled", "region", "encryption_key", "priority_level",
@@ -218,7 +221,7 @@ if sl:
 # ============================================================================
 print("--- 3. Shape injection ---")
 
-vehicle = get_type("fleet.Vehicle")
+vehicle = get_type(f"{M}fleet.Vehicle")
 if vehicle:
     for i, name in enumerate(["id", "created_at", "updated_at", "deleted_at"]):
         f = vehicle["fields"][i]
@@ -244,8 +247,8 @@ if vehicle:
 # ============================================================================
 print("--- 5. Type aliases ---")
 
-for alias in ["common.Id", "common.TrackingNumber", "common.WeightKg",
-              "common.IsFragile", "common.Barcode"]:
+for alias in [f"{M}common.Id", f"{M}common.TrackingNumber", f"{M}common.WeightKg",
+              f"{M}common.IsFragile", f"{M}common.Barcode"]:
     t = get_type(alias)
     if t and len(t.get("fields", [])) != 0:
         error(f"{alias}: type alias should have 0 fields")
@@ -255,7 +258,7 @@ for alias in ["common.Id", "common.TrackingNumber", "common.WeightKg",
 # ============================================================================
 print("--- 6. Enums ---")
 
-vt = get_enum("fleet.VehicleType")
+vt = get_enum(f"{M}fleet.VehicleType")
 if vt:
     names = enum_value_names(vt)
     if "Unspecified" not in names:
@@ -275,19 +278,19 @@ if vehicle:
     if "MaintenanceRecord" not in nested:
         error("Vehicle: missing nested type MaintenanceRecord")
 
-driver = get_type("fleet.Driver")
+driver = get_type(f"{M}fleet.Driver")
 if driver:
     nested_enums = [ne["name"] for ne in driver.get("nestedEnums", [])]
     if "EmploymentStatus" not in nested_enums:
         error("Driver: missing nested enum EmploymentStatus")
 
-wh = get_type("warehouse.Warehouse")
+wh = get_type(f"{M}warehouse.Warehouse")
 if wh:
     nested = [nt["name"] for nt in wh.get("nestedTypes", [])]
     if "Zone" not in nested:
         error("Warehouse: missing nested type Zone")
 
-zone = get_type("warehouse.Warehouse.Zone")
+zone = get_type(f"{M}warehouse.Warehouse.Zone")
 if zone:
     nested_enums = [ne["name"] for ne in zone.get("nestedEnums", [])]
     if "ZoneTemperature" not in nested_enums:
@@ -307,12 +310,12 @@ if driver:
         if "depot" not in fnames or "live" not in fnames:
             error(f"Driver.location: expected depot+live, got {fnames}")
 
-shipment_t = get_type("shipment.Shipment")
+shipment_t = get_type(f"{M}shipment.Shipment")
 if shipment_t:
     if "delivery_method" not in oneof_names(shipment_t):
         error("Shipment: missing oneof 'delivery_method'")
 
-order_t = get_type("order.Order")
+order_t = get_type(f"{M}order.Order")
 if order_t:
     if "payment_details" not in oneof_names(order_t):
         error("Order: missing oneof 'payment_details'")
@@ -323,7 +326,7 @@ if order_t:
 print("--- 9. Pick/Omit ---")
 
 # Pick<Shipment, tracking_number, status, destination, receiver>
-sp = get_type("shipment.ShipmentPublic")
+sp = get_type(f"{M}shipment.ShipmentPublic")
 if sp:
     actual = set(field_names(sp))
     expected = {"tracking_number", "status", "destination", "receiver"}
@@ -331,7 +334,7 @@ if sp:
         error(f"ShipmentPublic fields: expected {expected}, got {actual}")
 
 # Omit<Shipment, shipping_cost, insurance_cost>
-swc = get_type("shipment.ShipmentWithoutCosts")
+swc = get_type(f"{M}shipment.ShipmentWithoutCosts")
 if swc and shipment_t:
     removed = set(field_names(shipment_t)) - set(field_names(swc))
     for f in ["shipping_cost", "insurance_cost"]:
@@ -339,7 +342,7 @@ if swc and shipment_t:
             error(f"ShipmentWithoutCosts: '{f}' should be removed, diff={removed}")
 
 # Omit<Shipment, common.AuditFields> — KNOWN BUG: qualified shape in Omit not resolved
-sna = get_type("shipment.ShipmentNoAudit")
+sna = get_type(f"{M}shipment.ShipmentNoAudit")
 if sna and shipment_t:
     removed = set(field_names(shipment_t)) - set(field_names(sna))
     if "created_at" not in removed or "updated_at" not in removed:
@@ -347,7 +350,7 @@ if sna and shipment_t:
                    "created_at/updated_at not removed")
 
 # OrderPublic = Pick<Order, order_number, status, total, tracking_number>
-op = get_type("order.OrderPublic")
+op = get_type(f"{M}order.OrderPublic")
 if op:
     actual = set(field_names(op))
     expected = {"order_number", "status", "total", "tracking_number"}
@@ -355,7 +358,7 @@ if op:
         error(f"OrderPublic fields: expected {expected}, got {actual}")
 
 # OrderWithoutPayment = Omit<Order, payment_method, payment_details>
-owp = get_type("order.OrderWithoutPayment")
+owp = get_type(f"{M}order.OrderWithoutPayment")
 if owp and order_t:
     removed = set(field_names(order_t)) - set(field_names(owp))
     if "payment_method" not in removed:
@@ -378,25 +381,25 @@ def check_mapping(type_name, field_name):
         error(f"{type_name}.{field_name}: missing projection mapping")
 
 # Simple
-check_mapping("shipment.ShipmentSummary", "cost")
-check_mapping("shipment.ShipmentSummary", "tracking_number")
+check_mapping(f"{M}shipment.ShipmentSummary", "cost")
+check_mapping(f"{M}shipment.ShipmentSummary", "tracking_number")
 
 # Nested flatten
-check_mapping("shipment.ShipmentFlatRow", "origin_city")
-check_mapping("shipment.ShipmentFlatRow", "dest_country")
+check_mapping(f"{M}shipment.ShipmentFlatRow", "origin_city")
+check_mapping(f"{M}shipment.ShipmentFlatRow", "dest_country")
 
 # Multi-source
-check_mapping("shipment.ShipmentDashboard", "distance_km")
-check_mapping("shipment.ShipmentDashboard", "receiver_name")
+check_mapping(f"{M}shipment.ShipmentDashboard", "distance_km")
+check_mapping(f"{M}shipment.ShipmentDashboard", "receiver_name")
 
 # Chain
-check_mapping("shipment.ShipmentCard", "tracking_number")
+check_mapping(f"{M}shipment.ShipmentCard", "tracking_number")
 
 # Wildcard
-check_mapping("order.OrderPaymentFlat", "transaction_id")
+check_mapping(f"{M}order.OrderPaymentFlat", "transaction_id")
 
 # No mapping on new fields
-ss_search = get_type("shipment.ShipmentSearch")
+ss_search = get_type(f"{M}shipment.ShipmentSearch")
 if ss_search:
     f = field_by_name(ss_search, "search_text")
     if f and f.get("mapping") is not None:
@@ -415,17 +418,17 @@ if driver:
     check_field_has_annotation(driver, "first_name", "Length")
     check_field_has_annotation(driver, "phone", "Pattern")
 
-inv = get_type("warehouse.InventoryItem")
+inv = get_type(f"{M}warehouse.InventoryItem")
 if inv:
     check_field_has_annotation(inv, "sku", "NotEmpty")
     check_field_has_annotation(inv, "quantity", "Range")
 
 # Type-level custom annotations — KNOWN BUG: not lowered to IR
 for tname, ann in [
-    ("warehouse.Warehouse", "Table"),
-    ("warehouse.InventoryItem", "Table"),
-    ("order.Order", "Table"),
-    ("order.Order", "Pipeline"),
+    (f"{M}warehouse.Warehouse", "Table"),
+    (f"{M}warehouse.InventoryItem", "Table"),
+    (f"{M}order.Order", "Table"),
+    (f"{M}order.Order", "Pipeline"),
 ]:
     t = get_type(tname)
     if t and ann not in type_annotations(t):
@@ -435,14 +438,14 @@ for tname, ann in [
 if inv:
     f = field_by_name(inv, "sku")
     if f and "Column" not in field_annotations(f):
-        known_bug(f"warehouse.InventoryItem.sku: @Column not in IR (custom field annotations not lowered)")
+        known_bug(f"{M}warehouse.InventoryItem.sku: @Column not in IR (custom field annotations not lowered)")
 
 # ============================================================================
 # 12. Services and RPCs
 # ============================================================================
 print("--- 12. Services/RPCs ---")
 
-fleet_svc = get_service("golden.FleetService")
+fleet_svc = get_service(f"{M}golden.FleetService")
 if fleet_svc:
     # Service-level annotation — KNOWN BUG
     if "ServiceConfig" not in type_annotations(fleet_svc):
@@ -473,7 +476,7 @@ if fleet_svc:
         if "MethodConfig" not in rpc_anns:
             error("FleetService.ListVehicles: missing @MethodConfig on rpc")
 
-wh_svc = get_service("golden.WarehouseService")
+wh_svc = get_service(f"{M}golden.WarehouseService")
 if wh_svc:
     # client streaming
     r = rpc_by_name(wh_svc, "BulkIngest")
@@ -488,7 +491,7 @@ if wh_svc:
             error("WarehouseService.SyncInventory: output should be stream")
 
 # Inline request with oneof (our parser fix!)
-ship_svc = get_service("golden.ShipmentService")
+ship_svc = get_service(f"{M}golden.ShipmentService")
 if ship_svc:
     r = rpc_by_name(ship_svc, "CreateShipment")
     if r:
@@ -503,7 +506,7 @@ if ship_svc:
                 if expected not in dm_fields:
                     error(f"CreateShipment.delivery_method: missing field '{expected}'")
 
-order_svc = get_service("golden.OrderService")
+order_svc = get_service(f"{M}golden.OrderService")
 if order_svc:
     r = rpc_by_name(order_svc, "OrderStatusFeed")
     if r:
@@ -517,7 +520,7 @@ if order_svc:
 # ============================================================================
 print("--- 13. Collection types ---")
 
-meta = get_type("common.Metadata")
+meta = get_type(f"{M}common.Metadata")
 if meta:
     if not has_map_type(field_by_name(meta, "labels")):
         error("Metadata.labels: should be map type")
@@ -539,7 +542,7 @@ if vehicle:
 # ============================================================================
 print("--- 14. Generic expansion ---")
 
-lrv = get_type("golden.ListResponseVehicle")
+lrv = get_type(f"{M}golden.ListResponseVehicle")
 if lrv:
     data = field_by_name(lrv, "data")
     if data is None:

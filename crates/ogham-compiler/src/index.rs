@@ -15,6 +15,9 @@ pub struct ParsedFile {
     pub file_name: String,
     pub root: SyntaxNode,
     pub package: String,
+    /// Full import path, e.g. "github.com/oghamlang/std/time" or "github.com/org/proj/common".
+    /// Falls back to `package` when no module_path is available.
+    pub import_path: String,
 }
 
 fn make_loc(file: Sym, node: &SyntaxNode) -> Loc {
@@ -202,18 +205,19 @@ pub fn collect(
 
     let file_sym = interner.intern(&file.file_name);
     let pkg = &file.package;
+    let ip = &file.import_path;
 
     // Index types (including nested)
     for type_decl in root.type_decls() {
         index_type_decl(
-            &type_decl, pkg, file_sym, interner, arenas, symbols, diag, &file.file_name,
+            &type_decl, ip, file_sym, interner, arenas, symbols, diag, &file.file_name,
         );
     }
 
     // Index enums (including nested)
     for enum_decl in root.enum_decls() {
         index_enum_decl(
-            &enum_decl, pkg, file_sym, interner, arenas, symbols, diag, &file.file_name,
+            &enum_decl, ip, file_sym, interner, arenas, symbols, diag, &file.file_name,
         );
     }
 
@@ -223,7 +227,7 @@ pub fn collect(
             Some(t) => t.text().to_string(),
             None => continue,
         };
-        let full = format!("{}.{}", pkg, name_text);
+        let full = format!("{}.{}", ip, name_text);
         let name_sym = interner.intern(&name_text);
         let full_sym = interner.intern(&full);
 
@@ -275,7 +279,7 @@ pub fn collect(
             Some(t) => t.text().to_string(),
             None => continue,
         };
-        let full = format!("{}.{}", pkg, name_text);
+        let full = format!("{}.{}", ip, name_text);
         let name_sym = interner.intern(&name_text);
         let full_sym = interner.intern(&full);
 
@@ -451,7 +455,8 @@ mod tests {
         let file = ParsedFile {
             file_name: "test.ogham".to_string(),
             root,
-            package: pkg,
+            package: pkg.clone(),
+            import_path: pkg,
         };
 
         let mut interner = Interner::default();

@@ -1,0 +1,14 @@
+package wrappers;
+
+// Wrapper types — compatible with google.protobuf.*Value.
+// Use when you need to distinguish "not set" from "zero value".
+
+type BoolValue { bool value = 1; }
+type StringValue { string value = 1; }
+type BytesValue { bytes value = 1; }
+type Int32Value { int32 value = 1; }
+type Int64Value { int64 value = 1; }
+type Uint32Value { uint32 value = 1; }
+type Uint64Value { uint64 value = 1; }
+type FloatValue { float value = 1; }
+type DoubleValue { double value = 1; }

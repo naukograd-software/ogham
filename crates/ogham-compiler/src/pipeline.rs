@@ -79,10 +79,16 @@ pub fn compile(sources: &[SourceFile], opts: &CompileOptions) -> CompileResult {
             }
         }
 
+        let import_path = match &opts.module_path {
+            Some(mp) => format!("{}/{}", mp, pkg),
+            None => pkg.clone(),
+        };
+
         files.push(ParsedFile {
             file_name: source.name.clone(),
             root,
             package: pkg,
+            import_path,
         });
     }
 
@@ -96,10 +102,15 @@ pub fn compile(sources: &[SourceFile], opts: &CompileOptions) -> CompileResult {
             .and_then(|p| p.name().map(|t| t.text().to_string()))
             .unwrap_or_else(|| "default".to_string());
 
+        let import_path = stdlib::import_path_for_package(&pkg)
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| pkg.clone());
+
         files.push(ParsedFile {
             file_name: source.name.clone(),
             root,
             package: pkg,
+            import_path,
         });
     }
 
@@ -388,7 +399,8 @@ type User {
         assert!(!result.diagnostics.has_errors(), "errors: {:?}", result.diagnostics.all());
 
         // Check that annotations are linked to definitions
-        let key = result.interner.inner.get("example.User").unwrap();
+        // With module_path="test", full_name = "test/example.User"
+        let key = result.interner.inner.get("test/example.User").unwrap();
         let user_id = result.symbols.types[&key];
         let age_ann = &result.arenas.types[user_id].fields[0].annotations[0];
         assert!(age_ann.definition.is_some(), "age annotation should be linked to overload");

@@ -1,0 +1,7 @@
+package fieldmask;
+
+// FieldMask — compatible with google.protobuf.FieldMask.
+// Paths use dot notation for nested fields: "address.city".
+type FieldMask {
+    []string paths = 1;
+}

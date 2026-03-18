@@ -53,13 +53,18 @@ install: build # Build and copy binaries to $$OGHAM_BIN or ~/.ogham/bin
 	@echo "Installed to $${OGHAM_BIN:-$$HOME/.ogham/bin}"
 
 .PHONY: example
-example: build # Generate Go and Proto code for examples/store, then run protoc-gen-go
-	./bin/ogham generate --dir examples/store
-	protoc \
-		--proto_path=examples/store/gen/proto \
-		--go_out=examples/store/gen/pbgo \
-		--go_opt=paths=source_relative \
-		examples/store/gen/proto/*.proto
+example: build # Generate Proto code for examples/golden, then run protoc-gen-go
+	./bin/ogham generate --dir examples/golden
+	@if command -v protoc > /dev/null 2>&1; then \
+		mkdir -p examples/golden/gen/pbgo; \
+		protoc \
+			--proto_path=examples/golden/gen/proto \
+			--go_out=examples/golden/gen/pbgo \
+			--go_opt=paths=source_relative \
+			examples/golden/gen/proto/*.proto; \
+	else \
+		echo "protoc not found — skipping Go proto generation"; \
+	fi
 
 .PHONY: ci
 ci: fmt clippy test # Run formatting, lints, and all tests (Rust + Go + TS)

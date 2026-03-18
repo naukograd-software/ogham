@@ -9,6 +9,23 @@ use ogham_proto::oghamproto::{compiler, ir};
 /// Maximum recursion depth for inline type expansion.
 const MAX_DEPTH: usize = 8;
 
+/// Split a full_name like "github.com/org/proj/common.Address"
+/// into (import_path="github.com/org/proj/common", type_name="Address").
+/// For nested: "github.com/org/proj/common.Warehouse.Zone" → ("github.com/org/proj/common", "Warehouse.Zone").
+/// Fallback for old format: "package.TypeName" → ("package", "TypeName").
+fn split_full_name(full: &str) -> (&str, &str) {
+    if let Some(slash_pos) = full.rfind('/') {
+        let after_slash = &full[slash_pos + 1..];
+        if let Some(dot_pos) = after_slash.find('.') {
+            let import_path = &full[..slash_pos + 1 + dot_pos];
+            let type_path = &after_slash[dot_pos + 1..];
+            return (import_path, type_path);
+        }
+    }
+    // Fallback: old format "package.TypeName"
+    full.rsplit_once('.').unwrap_or((full, ""))
+}
+
 /// Convert the resolved HIR into a proto `ir::Module`.
 ///
 /// `module_info` is set on every top-level Type/Enum/Service so plugins know
@@ -65,6 +82,48 @@ impl<'a> Ctx<'a> {
         self.interner.resolve(s).to_string()
     }
 
+    /// Build per-declaration ModuleInfo using the declaration's full_name.
+    /// full_name is now "import_path.TypeName", e.g.:
+    ///   "github.com/oghamlang/std/time.Timestamp" → package = "time"
+    ///   "github.com/org/proj/common.Address" → package = "common"
+    ///   "example.User" (no module_path) → package = "example"
+    fn module_info_for(&self, full_name: Sym) -> Option<ir::ModuleInfo> {
+        let full = self.interner.resolve(full_name);
+        let (import_path, _type_name) = split_full_name(full);
+        let short_pkg = import_path.rsplit('/').next().unwrap_or(import_path);
+
+        // Check if this is a std package
+        let is_std = crate::stdlib::is_std_package(short_pkg);
+
+        let module_path = if is_std {
+            "github.com/oghamlang/std".to_string()
+        } else {
+            self.module_info.as_ref().map(|b| b.module_path.clone()).unwrap_or_default()
+        };
+
+        // Package = relative path from module_path to import_path
+        // e.g. module_path="github.com/oghamlang/std", import_path="github.com/oghamlang/std/proto/any"
+        // → package = "proto/any"
+        let package = if !module_path.is_empty() && import_path.starts_with(&module_path) {
+            let rel = import_path[module_path.len()..].trim_start_matches('/');
+            if rel.is_empty() { short_pkg.to_string() } else { rel.to_string() }
+        } else {
+            short_pkg.to_string()
+        };
+
+        let base = self.module_info.as_ref();
+        Some(ir::ModuleInfo {
+            module_path,
+            package,
+            version: if is_std {
+                String::new()
+            } else {
+                base.map(|b| b.version.clone()).unwrap_or_default()
+            },
+            generate: !is_std && base.map(|b| b.generate).unwrap_or(false),
+        })
+    }
+
     fn inflate_annotations(&self, annotations: &[crate::hir::AnnotationCall]) -> Vec<ir::AnnotationCall> {
         annotations
             .iter()
@@ -111,6 +170,7 @@ impl<'a> Ctx<'a> {
 
     fn inflate_type(&mut self, id: TypeId) -> ir::Type {
         let ty = &self.arenas.types[id];
+        let module = self.module_info_for(ty.full_name);
         ir::Type {
             name: self.sym(ty.name),
             full_name: self.sym(ty.full_name),
@@ -144,7 +204,7 @@ impl<'a> Ctx<'a> {
                 .collect(),
             trace: ty.trace.as_ref().map(|t| self.inflate_type_trace(t)),
             location: None,
-            module: self.module_info.clone(),
+            module: module,
         }
     }
 
@@ -184,6 +244,7 @@ impl<'a> Ctx<'a> {
 
     fn inflate_enum(&self, id: EnumId) -> ir::Enum {
         let e = &self.arenas.enums[id];
+        let module = self.module_info_for(e.full_name);
         ir::Enum {
             name: self.sym(e.name),
             full_name: self.sym(e.full_name),
@@ -201,12 +262,13 @@ impl<'a> Ctx<'a> {
                 .collect(),
             annotations: self.inflate_annotations(&e.annotations),
             location: None,
-            module: self.module_info.clone(),
+            module: module,
         }
     }
 
     fn inflate_service(&mut self, id: ServiceId) -> ir::Service {
         let svc = &self.arenas.services[id];
+        let module = self.module_info_for(svc.full_name);
         ir::Service {
             name: self.sym(svc.name),
             full_name: self.sym(svc.full_name),
@@ -223,7 +285,7 @@ impl<'a> Ctx<'a> {
                 .collect(),
             annotations: self.inflate_annotations(&svc.annotations),
             location: None,
-            module: self.module_info.clone(),
+            module,
         }
     }
 
@@ -331,7 +393,7 @@ impl<'a> Ctx<'a> {
         }
     }
 
-    fn inflate_type_trace(&self, t: &TypeTrace) -> ir::TypeTrace {
+    fn inflate_type_trace(&mut self, t: &TypeTrace) -> ir::TypeTrace {
         ir::TypeTrace {
             origin: Some(match t {
                 TypeTrace::Generic {
@@ -350,6 +412,11 @@ impl<'a> Ctx<'a> {
                     source_type_name: String::new(),
                     field_names: field_names.iter().map(|&s| self.sym(s)).collect(),
                 }),
+                TypeTrace::Alias { underlying } => {
+                    ir::type_trace::Origin::Alias(ir::AliasOrigin {
+                        underlying: Some(self.inflate_resolved_type(underlying)),
+                    })
+                }
             }),
         }
     }

@@ -2,26 +2,10 @@ package time;
 
 import github.com/oghamlang/std/validate;
 
-// ── Clean model (single value) ─────────────────────────────────────────
-
 // Timestamp — Unix timestamp in nanoseconds since epoch (1970-01-01T00:00:00Z).
 // Always UTC. Use TimeZone to convert for display.
 // Max range: ~584 years from epoch.
 type Timestamp = uint64;
-
-// ── Proto-compatible model (seconds + nanos) ───────────────────────────
-
-// ProtoTimestamp — timestamp compatible with google.protobuf.Timestamp.
-// Seconds since epoch + sub-second nanos.
-type ProtoTimestamp {
-    // Seconds since 1970-01-01T00:00:00Z. Can be negative for pre-epoch.
-    int64 seconds = 1;
-    // Non-negative fractions of a second at nanosecond resolution.
-    @validate::Range(min=0, max=999999999)
-    int32 nanos = 2;
-}
-
-// ── Calendar types ─────────────────────────────────────────────────────
 
 // Date — calendar date as days since Unix epoch (1970-01-01).
 // Negative values represent dates before epoch.
@@ -45,8 +29,6 @@ type TimeOfDay {
 }
 
 // DateTime — date and time without timezone (civil time).
-// Represents a point on the calendar, not a moment in time.
-// Example: "2024-03-15 14:30:00" means different instants in different timezones.
 type DateTime {
     int32 year = 1;
     @validate::Range(min=1, max=12)

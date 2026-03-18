@@ -256,7 +256,12 @@ message TypeTrace {
     oneof origin {
         GenericOrigin generic = 1;          // monomorphized from a generic
         PickOmitOrigin pick_omit = 2;       // created via Pick/Omit
+        AliasOrigin alias = 3;             // type alias (e.g., type UUID = bytes)
     }
+}
+
+message AliasOrigin {
+    TypeReference underlying = 1;           // the underlying/target type
 }
 
 message GenericOrigin {

@@ -1,0 +1,10 @@
+package any;
+
+// Any — compatible with google.protobuf.Any.
+// Wraps an arbitrary serialized message alongside a type URL.
+type Any {
+    // URL that identifies the type of the serialized value.
+    string type_url = 1;
+    // Serialized message bytes.
+    bytes value = 2;
+}

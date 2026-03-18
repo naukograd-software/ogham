@@ -1,0 +1,6 @@
+package empty;
+
+// Empty — compatible with google.protobuf.Empty.
+// Prefer `void` keyword in RPC declarations.
+type Empty {
+}

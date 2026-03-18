@@ -1,8 +1,7 @@
 package rpc;
 
 import github.com/oghamlang/std/validate;
-import github.com/oghamlang/std/any;
-import github.com/oghamlang/std/struct;
+import github.com/oghamlang/std/proto/any;
 
 // ── Pagination ─────────────────────────────────────────────────────────
 

@@ -1,18 +1,5 @@
 package duration;
 
-import github.com/oghamlang/std/validate;
-
 // Duration — duration in nanoseconds.
 // Max range: ~584 years.
 type Duration = uint64;
-
-// ProtoDuration — duration compatible with google.protobuf.Duration.
-// Signed duration in seconds + nanos.
-type ProtoDuration {
-    // Signed seconds of the span of time.
-    int64 seconds = 1;
-    // Signed fractions of a second at nanosecond resolution.
-    // Must have the same sign as seconds (or be zero).
-    @validate::Range(min=-999999999, max=999999999)
-    int32 nanos = 2;
-}

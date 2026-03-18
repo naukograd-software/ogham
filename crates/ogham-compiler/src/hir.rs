@@ -356,6 +356,9 @@ pub enum TypeTrace {
         source_type: TypeId,
         field_names: Vec<Sym>,
     },
+    Alias {
+        underlying: ResolvedType,
+    },
 }
 
 #[derive(Debug, Clone)]

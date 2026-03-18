@@ -9,6 +9,17 @@ use crate::ast::{self, AstNode};
 use crate::diagnostics::Diagnostics;
 use crate::hir::*;
 use crate::index::ParsedFile;
+/// Extract the short package name from a full_name like "github.com/org/proj/common.Address" → "common".
+/// For old-format "common.Address" → "common".
+fn split_full_name_pkg_short(full: &str) -> &str {
+    if let Some(slash_pos) = full.rfind('/') {
+        let after_slash = &full[slash_pos + 1..];
+        after_slash.split('.').next().unwrap_or(after_slash)
+    } else {
+        full.split('.').next().unwrap_or(full)
+    }
+}
+
 // ── AST annotation → HIR annotation conversion ────────────────────────
 
 fn collect_annotation_calls(
@@ -108,6 +119,7 @@ pub fn populate_and_resolve(
 
         let file_sym = interner.intern(&file.file_name);
         let pkg = &file.package;
+        let ip = &file.import_path;
 
         // Collect imports for this file
         let imports = collect_imports(&root, interner, pkg);
@@ -118,7 +130,7 @@ pub fn populate_and_resolve(
                 Some(t) => t.text().to_string(),
                 None => continue,
             };
-            let full = format!("{}.{}", pkg, name_text);
+            let full = format!("{}.{}", ip, name_text);
             let full_sym = interner.intern(&full);
 
             let type_id = match symbols.types.get(&full_sym) {
@@ -136,6 +148,7 @@ pub fn populate_and_resolve(
                     interner,
                     file_sym,
                     pkg,
+                    ip,
                     &imports,
                     symbols,
                     diag,
@@ -148,6 +161,7 @@ pub fn populate_and_resolve(
                     interner,
                     file_sym,
                     pkg,
+                    ip,
                     &imports,
                     symbols,
                     diag,
@@ -173,13 +187,13 @@ pub fn populate_and_resolve(
                         if let Some(nested_body) = inner_decl.body() {
                             let nested_fields = collect_fields(
                                 &nested_body.fields(),
-                                interner, file_sym, pkg, &imports, symbols, diag, &file.file_name,
+                                interner, file_sym, pkg, ip, &imports, symbols, diag, &file.file_name,
                             );
                             arenas.types[nested_id].fields = nested_fields;
 
                             let nested_oneofs = collect_oneofs(
                                 &nested_body.oneofs(),
-                                interner, file_sym, pkg, &imports, symbols, diag, &file.file_name,
+                                interner, file_sym, pkg, ip, &imports, symbols, diag, &file.file_name,
                             );
                             arenas.types[nested_id].oneofs = nested_oneofs;
                         }
@@ -194,7 +208,7 @@ pub fn populate_and_resolve(
                 Some(t) => t.text().to_string(),
                 None => continue,
             };
-            let full = format!("{}.{}", pkg, name_text);
+            let full = format!("{}.{}", ip, name_text);
             let full_sym = interner.intern(&full);
 
             let shape_id = match symbols.shapes.get(&full_sym) {
@@ -209,7 +223,7 @@ pub fn populate_and_resolve(
                     let name = f.name()?.text().to_string();
                     let ty = f
                         .type_ref()
-                        .map(|tr| resolve_type_ref(&tr, interner, pkg, &imports, symbols, diag, &file.file_name))
+                        .map(|tr| resolve_type_ref(&tr, interner, pkg, ip, &imports, symbols, diag, &file.file_name))
                         .unwrap_or(ResolvedType::Error);
                     let annotations = collect_annotation_calls(&f.annotations(), interner);
                     Some(ShapeFieldDef {
@@ -245,6 +259,7 @@ pub fn resolve_rpcs(
         };
 
         let pkg = &file.package;
+        let ip = &file.import_path;
         let imports = collect_imports(&root, interner, pkg);
 
         for svc_decl in root.service_decls() {
@@ -252,7 +267,7 @@ pub fn resolve_rpcs(
                 Some(t) => t.text().to_string(),
                 None => continue,
             };
-            let full = format!("{}.{}", pkg, name_text);
+            let full = format!("{}.{}", ip, name_text);
             let full_sym = interner.intern(&full);
 
             let svc_id = match symbols.services.get(&full_sym) {
@@ -267,7 +282,7 @@ pub fn resolve_rpcs(
                     let name = rpc.name()?.text().to_string();
                     let input = rpc
                         .input()
-                        .map(|p| resolve_rpc_param(&p, interner, pkg, &imports, symbols, diag, &file.file_name, arenas, &name_text, &name, true))
+                        .map(|p| resolve_rpc_param(&p, interner, pkg, ip, &imports, symbols, diag, &file.file_name, arenas, &name_text, &name, true))
                         .unwrap_or(RpcParamDef {
                             is_void: true,
                             is_stream: false,
@@ -275,7 +290,7 @@ pub fn resolve_rpcs(
                         });
                     let output = rpc
                         .output()
-                        .map(|p| resolve_rpc_param(&p, interner, pkg, &imports, symbols, diag, &file.file_name, arenas, &name_text, &name, false))
+                        .map(|p| resolve_rpc_param(&p, interner, pkg, ip, &imports, symbols, diag, &file.file_name, arenas, &name_text, &name, false))
                         .unwrap_or(RpcParamDef {
                             is_void: true,
                             is_stream: false,
@@ -308,8 +323,9 @@ pub fn validate_imports(
     module_path: Option<&str>,
     diag: &mut Diagnostics,
 ) {
-    // Collect all known package names from compiled files
+    // Collect all known package names and import paths from compiled files
     let known_packages: HashSet<String> = files.iter().map(|f| f.package.clone()).collect();
+    let known_import_paths: HashSet<String> = files.iter().map(|f| f.import_path.clone()).collect();
 
     for file in files {
         let root = match ast::Root::cast(file.root.clone()) {
@@ -326,6 +342,8 @@ pub fn validate_imports(
             };
             let short = if let Some(alias) = imp.alias() {
                 alias.text().to_string()
+            } else if let Some(std_name) = crate::stdlib::std_package_name(&path_text) {
+                std_name.to_string()
             } else {
                 path_text.rsplit('/').next().unwrap_or(&path_text).to_string()
             };
@@ -369,9 +387,9 @@ pub fn validate_imports(
                     );
                 }
             } else if is_local {
-                // Validate local package exists
+                // Validate local package exists (check both short name and full import path)
                 let short = path_text.rsplit('/').next().unwrap_or(&path_text);
-                if !known_packages.contains(short) {
+                if !known_packages.contains(short) && !known_import_paths.contains(&path_text) {
                     let range = imp.syntax().text_range();
                     diag.error(
                         &file.file_name,
@@ -457,9 +475,8 @@ pub fn check_unused_imports(
         }
         // Shape package itself is referenced when injected
         let full = interner.resolve(shape.full_name);
-        if let Some(pkg) = full.rsplit_once('.').map(|(p, _)| p) {
-            referenced_packages.insert(pkg.to_string());
-        }
+        let short = split_full_name_pkg_short(full);
+        referenced_packages.insert(short.to_string());
     }
     // Check type field traces — shape injections reference shape packages
     for (_, ty) in arenas.types.iter() {
@@ -467,9 +484,8 @@ pub fn check_unused_imports(
             if let Some(trace) = &field.trace {
                 if let Some(origin) = &trace.shape {
                     let sfull = interner.resolve(arenas.shapes[origin.shape_id].full_name);
-                    if let Some(pkg) = sfull.rsplit_once('.').map(|(p, _)| p) {
-                        referenced_packages.insert(pkg.to_string());
-                    }
+                    let short = split_full_name_pkg_short(sfull);
+                    referenced_packages.insert(short.to_string());
                 }
             }
         }
@@ -497,7 +513,16 @@ pub fn check_unused_imports(
                 Some(p) => p.text(),
                 None => continue,
             };
-            let short = path_text.rsplit('/').next().unwrap_or(&path_text);
+            // Use std_package_name for std imports to get the correct short name
+            let short_owned;
+            let short = if let Some(alias) = imp.alias() {
+                short_owned = alias.text().to_string();
+                &short_owned
+            } else if let Some(std_name) = crate::stdlib::std_package_name(&path_text) {
+                std_name
+            } else {
+                path_text.rsplit('/').next().unwrap_or(&path_text)
+            };
 
             // Skip checking imports for the file's own package
             if short == file.package {
@@ -554,15 +579,14 @@ fn collect_referenced_packages(
     match ty {
         ResolvedType::Message(id) => {
             let full = interner.resolve(arenas.types[*id].full_name);
-            if let Some(pkg) = full.rsplit_once('.').map(|(p, _)| p) {
-                packages.insert(pkg.to_string());
-            }
+            // Extract short package name from full_name
+            let short = split_full_name_pkg_short(full);
+            packages.insert(short.to_string());
         }
         ResolvedType::Enum(id) => {
             let full = interner.resolve(arenas.enums[*id].full_name);
-            if let Some(pkg) = full.rsplit_once('.').map(|(p, _)| p) {
-                packages.insert(pkg.to_string());
-            }
+            let short = split_full_name_pkg_short(full);
+            packages.insert(short.to_string());
         }
         ResolvedType::Array(inner) => collect_referenced_packages(inner, arenas, interner, packages),
         ResolvedType::Map { key, value } => {
@@ -587,6 +611,9 @@ fn collect_imports(root: &ast::Root, _interner: &mut Interner, _pkg: &str) -> Im
         };
         let short = if let Some(alias) = imp.alias() {
             alias.text().to_string()
+        } else if let Some(std_name) = crate::stdlib::std_package_name(&path_text) {
+            // Use the std package short name (handles proto_* prefixed packages)
+            std_name.to_string()
         } else {
             // Last segment of path
             path_text
@@ -608,6 +635,7 @@ fn collect_fields(
     interner: &mut Interner,
     _file_sym: Sym,
     pkg: &str,
+    import_path: &str,
     imports: &ImportMap,
     symbols: &SymbolTable,
     diag: &mut Diagnostics,
@@ -622,7 +650,7 @@ fn collect_fields(
             let is_optional = type_ref.is_optional();
             let is_repeated = type_ref.array_type().is_some();
 
-            let ty = resolve_type_ref(&type_ref, interner, pkg, imports, symbols, diag, file_name);
+            let ty = resolve_type_ref(&type_ref, interner, pkg, import_path, imports, symbols, diag, file_name);
 
             let mapping = f.mapping().map(|m| {
                 let segments = m.segments();
@@ -658,6 +686,7 @@ fn collect_oneofs(
     interner: &mut Interner,
     _file_sym: Sym,
     pkg: &str,
+    import_path: &str,
     imports: &ImportMap,
     symbols: &SymbolTable,
     diag: &mut Diagnostics,
@@ -674,7 +703,7 @@ fn collect_oneofs(
                     let fname = f.name()?.text().to_string();
                     let number = f.field_number().unwrap_or(0);
                     let type_ref = f.type_ref()?;
-                    let ty = resolve_type_ref(&type_ref, interner, pkg, imports, symbols, diag, file_name);
+                    let ty = resolve_type_ref(&type_ref, interner, pkg, import_path, imports, symbols, diag, file_name);
 
                     let mapping = f.mapping().map(|m| {
                         let segments = m.segments();
@@ -714,6 +743,7 @@ fn resolve_rpc_param(
     param: &ast::RpcParam,
     interner: &mut Interner,
     pkg: &str,
+    import_path: &str,
     imports: &ImportMap,
     symbols: &SymbolTable,
     diag: &mut Diagnostics,
@@ -734,14 +764,14 @@ fn resolve_rpc_param(
     let is_stream = param.is_stream();
 
     let ty = if let Some(tr) = param.type_ref() {
-        resolve_type_ref(&tr, interner, pkg, imports, symbols, diag, file_name)
+        resolve_type_ref(&tr, interner, pkg, import_path, imports, symbols, diag, file_name)
     } else if let Some(inline) = param.inline_type() {
         // Create an anonymous message type for inline RPC param.
         // e.g., service UserAPI { rpc CreateUser({ string name = 1; }) -> User; }
         // → generates type UserAPI_CreateUserRequest { string name = 1; }
         let suffix = if is_input { "Request" } else { "Response" };
         let type_name = format!("{}_{}{}", svc_name, rpc_name, suffix);
-        let full_name = format!("{}.{}", pkg, type_name);
+        let full_name = format!("{}.{}", import_path, type_name);
 
         let name_sym = interner.intern(&type_name);
         let full_sym = interner.intern(&full_name);
@@ -758,7 +788,7 @@ fn resolve_rpc_param(
             let is_repeated = field_decl.type_ref().as_ref().map_or(false, |tr| tr.array_type().is_some());
             let field_ty = field_decl
                 .type_ref()
-                .map(|tr| resolve_type_ref(&tr, interner, pkg, imports, symbols, diag, file_name))
+                .map(|tr| resolve_type_ref(&tr, interner, pkg, import_path, imports, symbols, diag, file_name))
                 .unwrap_or(ResolvedType::Error);
             let annotations = collect_annotation_calls(&field_decl.annotations(), interner);
 
@@ -782,6 +812,7 @@ fn resolve_rpc_param(
             interner,
             file_sym,
             pkg,
+            import_path,
             imports,
             symbols,
             diag,
@@ -819,6 +850,7 @@ fn resolve_type_ref(
     type_ref: &ast::TypeRef,
     interner: &mut Interner,
     pkg: &str,
+    import_path: &str,
     imports: &ImportMap,
     symbols: &SymbolTable,
     diag: &mut Diagnostics,
@@ -827,7 +859,7 @@ fn resolve_type_ref(
     // Array type: []T
     if let Some(arr) = type_ref.array_type() {
         if let Some(inner_ref) = arr.element_type() {
-            let inner = resolve_type_ref(&inner_ref, interner, pkg, imports, symbols, diag, file_name);
+            let inner = resolve_type_ref(&inner_ref, interner, pkg, import_path, imports, symbols, diag, file_name);
             return ResolvedType::Array(Box::new(inner));
         }
         return ResolvedType::Error;
@@ -837,11 +869,11 @@ fn resolve_type_ref(
     if let Some(map) = type_ref.map_type() {
         let key = map
             .key_type()
-            .map(|k| resolve_type_ref(&k, interner, pkg, imports, symbols, diag, file_name))
+            .map(|k| resolve_type_ref(&k, interner, pkg, import_path, imports, symbols, diag, file_name))
             .unwrap_or(ResolvedType::Error);
         let value = map
             .value_type()
-            .map(|v| resolve_type_ref(&v, interner, pkg, imports, symbols, diag, file_name))
+            .map(|v| resolve_type_ref(&v, interner, pkg, import_path, imports, symbols, diag, file_name))
             .unwrap_or(ResolvedType::Error);
         return ResolvedType::Map {
             key: Box::new(key),
@@ -862,8 +894,8 @@ fn resolve_type_ref(
             if let Some(scalar) = try_scalar(name) {
                 return ResolvedType::Scalar(scalar);
             }
-            // Look up in same package
-            let full = format!("{}.{}", pkg, name);
+            // Look up in same package (using import_path for symbol table)
+            let full = format!("{}.{}", import_path, name);
             let full_sym = interner.intern(&full);
             if let Some(id) = symbols.types.get(&full_sym) {
                 return ResolvedType::Message(*id);
@@ -881,9 +913,10 @@ fn resolve_type_ref(
         let type_name = rest.last().unwrap();
 
         // Check imports (first segment = import alias or package short name)
-        if let Some(import_path) = imports.get(first) {
-            // Try full import path + type name
-            let full = format!("{}.{}", import_path, type_name);
+        if let Some(imp_path) = imports.get(first) {
+            // The import map value is the full import path (e.g., "github.com/oghamlang/std/uuid").
+            // Symbol table keys now use import_path.TypeName format.
+            let full = format!("{}.{}", imp_path, type_name);
             let full_sym = interner.intern(&full);
             if let Some(id) = symbols.types.get(&full_sym) {
                 return ResolvedType::Message(*id);
@@ -891,16 +924,17 @@ fn resolve_type_ref(
             if let Some(id) = symbols.enums.get(&full_sym) {
                 return ResolvedType::Enum(*id);
             }
-            // Try last segment of import path as package name
-            // e.g., "github.com/oghamlang/std/decimal" → "decimal"
-            let pkg_name = import_path.rsplit('/').next().unwrap_or(import_path);
-            let pkg_full = format!("{}.{}", pkg_name, type_name);
-            let pkg_sym = interner.intern(&pkg_full);
-            if let Some(id) = symbols.types.get(&pkg_sym) {
-                return ResolvedType::Message(*id);
-            }
-            if let Some(id) = symbols.enums.get(&pkg_sym) {
-                return ResolvedType::Enum(*id);
+            // Fallback: try with the std package name (handles std import paths)
+            if let Some(std_name) = crate::stdlib::std_package_name(imp_path) {
+                let std_ip = crate::stdlib::import_path_for_package(std_name).unwrap_or(imp_path);
+                let std_full = format!("{}.{}", std_ip, type_name);
+                let std_sym = interner.intern(&std_full);
+                if let Some(id) = symbols.types.get(&std_sym) {
+                    return ResolvedType::Message(*id);
+                }
+                if let Some(id) = symbols.enums.get(&std_sym) {
+                    return ResolvedType::Enum(*id);
+                }
             }
         }
 
@@ -969,6 +1003,7 @@ pub fn expand_type_aliases(
             None => continue,
         };
         let pkg = &file.package;
+        let ip = &file.import_path;
         let imports = collect_imports(&root, interner, pkg);
 
         for type_decl in root.type_decls() {
@@ -978,14 +1013,19 @@ pub fn expand_type_aliases(
             };
 
             if let Some(alias) = type_decl.alias() {
-                let full = format!("{}.{}", pkg, name_text);
+                let full = format!("{}.{}", ip, name_text);
                 let full_sym = interner.intern(&full);
 
                 let target = if let Some(tr) = alias.type_ref() {
-                    resolve_type_ref(&tr, interner, pkg, &imports, symbols, diag, &file.file_name)
+                    resolve_type_ref(&tr, interner, pkg, ip, &imports, symbols, diag, &file.file_name)
                 } else {
                     ResolvedType::Error
                 };
+
+                // Set the Alias trace on the type so IR/generators know it's an alias
+                if let Some(type_id) = symbols.types.get(&full_sym) {
+                    arenas.types[*type_id].trace = Some(TypeTrace::Alias { underlying: target.clone() });
+                }
 
                 aliases.push((full_sym, target));
             }
@@ -1008,6 +1048,13 @@ pub fn expand_type_aliases(
                 for field in &mut oneof.fields {
                     replace_alias(&mut field.ty, alias_type_id, target);
                 }
+            }
+        }
+
+        // Replace in shape fields (before shape injection in Pass 6)
+        for (_, shape) in arenas.shapes.iter_mut() {
+            for field in &mut shape.fields {
+                replace_alias(&mut field.ty, alias_type_id, target);
             }
         }
 
@@ -1053,7 +1100,7 @@ pub fn expand_shapes(
         range_start: u32,
         range_end: u32,
         insert_position: usize,
-        pkg: String,
+        import_path: String,
     }
 
     let mut injections: Vec<Injection> = Vec::new();
@@ -1063,14 +1110,14 @@ pub fn expand_shapes(
             Some(r) => r,
             None => continue,
         };
-        let pkg = &file.package;
+        let ip = &file.import_path;
 
         for type_decl in root.type_decls() {
             let name_text = match type_decl.name() {
                 Some(t) => t.text().to_string(),
                 None => continue,
             };
-            let full = format!("{}.{}", pkg, name_text);
+            let full = format!("{}.{}", ip, name_text);
             let full_sym = interner.intern(&full);
 
             if let Some(body) = type_decl.body() {
@@ -1088,7 +1135,7 @@ pub fn expand_shapes(
                         range_start: start,
                         range_end: end,
                         insert_position: i,
-                        pkg: pkg.to_string(),
+                        import_path: ip.to_string(),
                     });
                 }
             }
@@ -1105,7 +1152,7 @@ pub fn expand_shapes(
         // Find shape: try same package first, then by qualified name
         let shape_id = resolve_shape_name(
             &inj.shape_name,
-            &inj.pkg,
+            &inj.import_path,
             interner,
             arenas,
             symbols,
@@ -1174,7 +1221,7 @@ pub fn expand_shapes(
 /// Resolve a shape name — handles both simple ("MyShape") and qualified ("rpc.PageRequest").
 fn resolve_shape_name(
     name: &str,
-    current_pkg: &str,
+    current_import_path: &str,
     interner: &mut Interner,
     arenas: &Arenas,
     symbols: &SymbolTable,
@@ -1184,20 +1231,21 @@ fn resolve_shape_name(
         let pkg_alias = &name[..dot_pos];
         let shape_name = &name[dot_pos + 1..];
 
-        // Scan all shapes — match by short name and package name
+        // Scan all shapes — match by short name and package short name (last path segment)
         for (id, shape) in arenas.shapes.iter() {
             let sname = interner.resolve(shape.name).to_string();
             let sfull = interner.resolve(shape.full_name).to_string();
-            let spkg = sfull.rsplit_once('.').map(|(p, _)| p).unwrap_or("");
-            if sname == shape_name && spkg == pkg_alias {
+            // Extract short package name from full_name: "github.com/oghamlang/std/rpc.PageRequest" → "rpc"
+            let spkg_short = split_full_name_pkg_short(&sfull);
+            if sname == shape_name && spkg_short == pkg_alias {
                 return Some(id);
             }
         }
         return None;
     }
 
-    // Simple name — look in same package
-    let full = format!("{}.{}", current_pkg, name);
+    // Simple name — look in same package (using import_path)
+    let full = format!("{}.{}", current_import_path, name);
     let full_sym = interner.intern(&full);
     if let Some(id) = symbols.shapes.get(&full_sym) {
         return Some(*id);
@@ -1324,24 +1372,26 @@ pub fn monomorphize_generics(
     symbols: &mut SymbolTable,
     _diag: &mut Diagnostics,
 ) {
-    // Collect generic instantiations from AST
-    let mut instantiations: Vec<(String, String, Vec<String>)> = Vec::new(); // (pkg, generic_name, args)
+    // Collect generic instantiations from AST: (import_path, generic_name, args)
+    let mut instantiations: Vec<(String, String, Vec<String>)> = Vec::new();
 
     for file in files {
         let root = match ast::Root::cast(file.root.clone()) {
             Some(r) => r,
             None => continue,
         };
+        let ip = &file.import_path;
         let pkg = &file.package;
-        collect_generic_usages(&root, pkg, &mut instantiations);
+        let imports = collect_imports(&root, interner, pkg);
+        collect_generic_usages(&root, ip, &imports, &mut instantiations);
     }
 
     // Deduplicate
     instantiations.sort();
     instantiations.dedup();
 
-    for (pkg, generic_name, args) in &instantiations {
-        let full_generic = format!("{}.{}", pkg, generic_name);
+    for (ip, generic_name, args) in &instantiations {
+        let full_generic = format!("{}.{}", ip, generic_name);
         let full_sym = interner.intern(&full_generic);
 
         let generic_id = match symbols.types.get(&full_sym) {
@@ -1355,7 +1405,7 @@ pub fn monomorphize_generics(
             a.rsplit_once('.').map(|(_, n)| n).unwrap_or(a.as_str())
         }).collect();
         let mono_name = format!("{}{}", generic_name, short_args.join(""));
-        let mono_full = format!("{}.{}", pkg, mono_name);
+        let mono_full = format!("{}.{}", ip, mono_name);
         let mono_full_sym = interner.intern(&mono_full);
 
         // Skip if already created
@@ -1386,11 +1436,11 @@ pub fn monomorphize_generics(
         // Substitute type params in fields
         // For now, resolve unresolved type params to concrete types
         for field in &mut mono_type.fields {
-            substitute_type_param(&mut field.ty, args, pkg, interner, symbols);
+            substitute_type_param(&mut field.ty, args, ip, interner, symbols);
         }
         for oneof in &mut mono_type.oneofs {
             for field in &mut oneof.fields {
-                substitute_type_param(&mut field.ty, args, pkg, interner, symbols);
+                substitute_type_param(&mut field.ty, args, ip, interner, symbols);
             }
         }
 
@@ -1438,18 +1488,18 @@ fn substitute_type_param(
     }
 }
 
-fn collect_generic_usages(root: &ast::Root, pkg: &str, out: &mut Vec<(String, String, Vec<String>)>) {
+fn collect_generic_usages(root: &ast::Root, import_path: &str, imports: &ImportMap, out: &mut Vec<(String, String, Vec<String>)>) {
     // Walk service RPCs for generic return types like Paginated<User>
     for svc in root.service_decls() {
         for rpc in svc.rpcs() {
             if let Some(output) = rpc.output() {
                 if let Some(tr) = output.type_ref() {
-                    check_type_ref_generic(&tr, pkg, out);
+                    check_type_ref_generic(&tr, import_path, imports, out);
                 }
             }
             if let Some(input) = rpc.input() {
                 if let Some(tr) = input.type_ref() {
-                    check_type_ref_generic(&tr, pkg, out);
+                    check_type_ref_generic(&tr, import_path, imports, out);
                 }
             }
         }
@@ -1459,14 +1509,14 @@ fn collect_generic_usages(root: &ast::Root, pkg: &str, out: &mut Vec<(String, St
         if let Some(body) = type_decl.body() {
             for field in body.fields() {
                 if let Some(tr) = field.type_ref() {
-                    check_type_ref_generic(&tr, pkg, out);
+                    check_type_ref_generic(&tr, import_path, imports, out);
                 }
             }
         }
     }
 }
 
-fn check_type_ref_generic(tr: &ast::TypeRef, pkg: &str, out: &mut Vec<(String, String, Vec<String>)>) {
+fn check_type_ref_generic(tr: &ast::TypeRef, import_path: &str, imports: &ImportMap, out: &mut Vec<(String, String, Vec<String>)>) {
     if let Some(qn) = tr.qualified_name() {
         let type_args = tr.type_args();
         if !type_args.is_empty() {
@@ -1477,17 +1527,24 @@ fn check_type_ref_generic(tr: &ast::TypeRef, pkg: &str, out: &mut Vec<(String, S
                     a.qualified_name().map(|q| {
                         let segs = q.segments();
                         if segs.len() == 1 {
-                            // Simple name like "Order" — same package
+                            // Simple name like "Order" — same package, use current import_path
                             segs[0].clone()
                         } else {
-                            // Qualified name like "fleet.Vehicle" — preserve full path
-                            segs.join(".")
+                            // Qualified name like "fleet.Vehicle" — resolve through imports
+                            let first = &segs[0];
+                            let type_name = &segs[segs.len() - 1];
+                            if let Some(imp_path) = imports.get(first.as_str()) {
+                                // "fleet" → "github.com/org/proj/fleet" → "github.com/org/proj/fleet.Vehicle"
+                                format!("{}.{}", imp_path, type_name)
+                            } else {
+                                segs.join(".")
+                            }
                         }
                     })
                 })
                 .collect();
             if !args.is_empty() {
-                out.push((pkg.to_string(), name, args));
+                out.push((import_path.to_string(), name, args));
             }
         }
     }
@@ -1508,14 +1565,14 @@ pub fn expand_pick_omit(
             Some(r) => r,
             None => continue,
         };
-        let pkg = &file.package;
+        let ip = &file.import_path;
 
         for type_decl in root.type_decls() {
             let name_text = match type_decl.name() {
                 Some(t) => t.text().to_string(),
                 None => continue,
             };
-            let full = format!("{}.{}", pkg, name_text);
+            let full = format!("{}.{}", ip, name_text);
             let full_sym = interner.intern(&full);
 
             let type_id = match symbols.types.get(&full_sym) {
@@ -1537,7 +1594,7 @@ pub fn expand_pick_omit(
                     .and_then(|tr| tr.qualified_name())
                     .and_then(|qn| {
                         let name = qn.segments().last()?.clone();
-                        let source_full = format!("{}.{}", pkg, name);
+                        let source_full = format!("{}.{}", ip, name);
                         let sym = interner.intern(&source_full);
                         symbols.types.get(&sym).copied()
                     });
@@ -1579,7 +1636,7 @@ pub fn expand_pick_omit(
                     .and_then(|tr| tr.qualified_name())
                     .and_then(|qn| {
                         let name = qn.segments().last()?.clone();
-                        let source_full = format!("{}.{}", pkg, name);
+                        let source_full = format!("{}.{}", ip, name);
                         let sym = interner.intern(&source_full);
                         symbols.types.get(&sym).copied()
                     });
@@ -1591,7 +1648,7 @@ pub fn expand_pick_omit(
                         for qn in fl.qualified_names() {
                             let text = qn.text();
                             // Check if this name refers to a shape
-                            if let Some(shape_id) = resolve_shape_name(&text, pkg, interner, arenas, symbols) {
+                            if let Some(shape_id) = resolve_shape_name(&text, ip, interner, arenas, symbols) {
                                 let shape_fields = expand_shape_fields(shape_id, arenas, interner, symbols, diag);
                                 for sf in &shape_fields {
                                     omitted_names.push(interner.resolve(sf.name).to_string());
@@ -1945,6 +2002,7 @@ pub fn populate_annotation_params(
             None => continue,
         };
         let pkg = &file.package;
+        let ip = &file.import_path;
         let imports = collect_imports(&root, interner, pkg);
 
         for ann_decl in root.annotation_decls() {
@@ -1952,6 +2010,7 @@ pub fn populate_annotation_params(
                 Some(t) => t.text().to_string(),
                 None => continue,
             };
+            // Annotation library key uses the short package name (not import_path)
             let lib_sym = interner.intern(pkg);
             let name_sym = interner.intern(&name_text);
 
@@ -1974,7 +2033,7 @@ pub fn populate_annotation_params(
 
                     let ty = field
                         .type_ref()
-                        .map(|tr| resolve_type_ref(&tr, interner, pkg, &imports, symbols, diag, &file.file_name))
+                        .map(|tr| resolve_type_ref(&tr, interner, pkg, ip, &imports, symbols, diag, &file.file_name))
                         .unwrap_or(ResolvedType::Error);
 
                     Some(AnnotationParamDef {
@@ -2168,7 +2227,8 @@ mod tests {
         let file = ParsedFile {
             file_name: "test.ogham".to_string(),
             root,
-            package: pkg,
+            package: pkg.clone(),
+            import_path: pkg,
         };
 
         let mut interner = Interner::default();

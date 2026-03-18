@@ -385,14 +385,14 @@ pub struct MappingLink {
 // ── Trace — origin metadata ────────────────────────────────────────────
 
 /// Trace on a Type: where did this type come from?
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TypeTrace {
-    #[prost(oneof = "type_trace::Origin", tags = "1, 2")]
+    #[prost(oneof = "type_trace::Origin", tags = "1, 2, 3")]
     pub origin: ::core::option::Option<type_trace::Origin>,
 }
 /// Nested message and enum types in `TypeTrace`.
 pub mod type_trace {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Origin {
         /// monomorphized from a generic
         #[prost(message, tag = "1")]
@@ -400,6 +400,9 @@ pub mod type_trace {
         /// created via Pick/Omit
         #[prost(message, tag = "2")]
         PickOmit(super::PickOmitOrigin),
+        /// type alias (e.g., type UUID = bytes)
+        #[prost(message, tag = "3")]
+        Alias(super::AliasOrigin),
     }
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -422,6 +425,12 @@ pub struct PickOmitOrigin {
     /// fields picked/omitted
     #[prost(string, repeated, tag = "3")]
     pub field_names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AliasOrigin {
+    /// the underlying/target type
+    #[prost(message, optional, tag = "1")]
+    pub underlying: ::core::option::Option<TypeReference>,
 }
 /// Trace on a Field: where did this field come from?
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
